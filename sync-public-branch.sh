@@ -60,6 +60,7 @@ EXCLUDES_ARRAY+=('.idea')
 EXCLUDES_ARRAY+=('.vscode')
 EXCLUDES_ARRAY+=('**/.DS_Store')
 EXCLUDES_ARRAY+=('venv')
+EXCLUDES_ARRAY+=('resources')
 EXCLUDES_ARRAY+=('*.log')
 
 printf -v EXCLUDES '%s,' "${EXCLUDES_ARRAY[@]}"
