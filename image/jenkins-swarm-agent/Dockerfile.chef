@@ -1,0 +1,45 @@
+## ref: https://hourperday.wordpress.com/2017/05/17/how-to-cicd-with-chef-cookbooks-and-jenkins-part-three/
+#FROM ruby:latest
+FROM media.johnson.int:5000/cicd-build-tools:latest
+
+RUN apt-get update -qq && apt-get install -qqy \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    lxc \
+    iptables
+
+# Install Docker from Docker Inc. repositories.
+RUN curl -sSL https://get.docker.com/ | sh
+
+# Install the magic wrapper.
+ADD ./wrapdocker.sh /usr/local/bin/wrapdocker
+RUN chmod +x /usr/local/bin/wrapdocker
+
+ENV SWARM_CLIENT_VERSION 2.0
+ENV DOCKER_COMPOSE_VERSION 1.3.3
+
+# Add a Jenkins user with permission to run docker commands
+RUN useradd -r -m -G docker jenkins
+
+## This is done in the base CICD tools image
+# Install necessary packages
+#RUN apt-get update && apt-get install -y curl zip openjdk-7-jre-headless supervisor && rm -rf /var/lib/apt/lists/*
+RUN apt-get install -y supervisor && rm -rf /var/lib/apt/lists/*
+
+# Install Jenkins Swarm Client
+ADD https://repo.jenkins-ci.org/releases/org/jenkins-ci/plugins/swarm-client/3.3/swarm-client-3.3.jar /home/jenkins/
+
+RUN chown jenkins:jenkins /home/jenkins/swarm-client-3.3.jar
+
+# Install Docker Compose
+RUN curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose
+RUN chmod +x /usr/local/bin/docker-compose
+
+ADD supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+ADD https://packages.chef.io/files/stable/chefdk/1.3.43/ubuntu/14.04/chefdk_1.3.43-1_amd64.deb chefdk_1.3.43-1_amd64.deb
+
+RUN dpkg -i chefdk_1.3.43-1_amd64.deb
+
+CMD ["/usr/bin/supervisord"]

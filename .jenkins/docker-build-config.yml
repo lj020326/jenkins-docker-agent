@@ -1,0 +1,27 @@
+---
+pipeline:
+  alwaysEmailList: ljohnson@dettonville.org
+  runInParallel: true
+  logLevel: DEBUG
+
+  buildArgs:
+    IMAGE_REGISTRY: media.johnson.int:5000
+
+  buildImageList:
+    - buildImageLabel: "cicd-build-tools"
+      buildDir: "image/cicd-build-tools"
+
+    - buildImageLabel: "jenkins-docker-cicd-agent"
+      buildDir: "image/jenkins-cicd-agent"
+
+#    - buildImageLabel: "jenkins-docker-packer-agent"
+#      buildDir: "image/jenkins-packer-agent"
+
+    - buildImageLabel: "cicd-docker-in-docker"
+      buildDir: "image/cicd-docker-in-docker"
+
+    - buildImageLabel: "jenkins-dind-agent"
+      buildDir: "image/jenkins-dind-agent"
+
+    - buildImageLabel: "jenkins-swarm-agent"
+      buildDir: "image/jenkins-swarm-agent"
