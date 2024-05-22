@@ -11,8 +11,6 @@ ARG BUILD_DATE="2024-05-01"
 FROM jenkins/inbound-agent as builder
 
 FROM $IMAGE_REGISTRY/$BASE_IMAGE_LABEL:latest
-#ARG IMAGE_REGISTRY
-#ARG IMAGE_LABEL
 LABEL maintainer="Lee Johnson <ljohnson@dettonville.org>"
 LABEL build_date=$BUILD_DATE
 LABEL build=$BUILD_ID

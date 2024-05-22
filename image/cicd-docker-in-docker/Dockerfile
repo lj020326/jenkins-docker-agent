@@ -1,12 +1,11 @@
-ARG BUILD_ID=devel
-ARG BUILD_DATE="2024-05-01"
-
 ## source: https://support.cloudbees.com/hc/en-us/articles/360001566111-Set-up-a-Docker-in-Docker-Agent-Template
 
 # Official Docker Image from https://hub.docker.com/_/docker/
 # Set the Docker version you want to use
 FROM docker:18.02-dind
 LABEL maintainer="Lee Johnson <ljohnson@dettonville.org>"
+ARG BUILD_ID=devel
+ARG BUILD_DATE="2024-05-01"
 LABEL build_date=$BUILD_DATE
 LABEL build=$BUILD_ID
 

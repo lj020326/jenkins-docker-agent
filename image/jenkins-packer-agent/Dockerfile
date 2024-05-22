@@ -1,6 +1,3 @@
-ARG BUILD_ID=devel
-ARG BUILD_DATE="2024-05-01"
-
 ## source: https://github.com/lj020326/ansible-jenkins-agent-docker
 
 # This Dockerfile is used to build an image containing basic stuff to be used as a Jenkins agent build node.
@@ -14,6 +11,8 @@ LABEL maintainer="Lee Johnson <ljohnson@dettonville.org>"
 LABEL Name="jenkins-docker-agent" Version="1.0.1"
 LABEL description="Image used by Dettonville products to build running on Ubuntu 20.04."
 LABEL org.dettonville.vendor="Dettonville"
+ARG BUILD_ID=devel
+ARG BUILD_DATE="2024-05-01"
 LABEL build_date=$BUILD_DATE
 LABEL build=$BUILD_ID
 

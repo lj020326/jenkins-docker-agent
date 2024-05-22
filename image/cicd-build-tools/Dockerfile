@@ -1,11 +1,10 @@
-ARG BUILD_ID=devel
-ARG BUILD_DATE="2024-05-01"
-
 ## ref: https://github.com/jenkinsci/docker-agent/blob/master/17/bullseye/Dockerfile
 ## ref: https://github.com/jenkinsci/docker-inbound-agent
 #FROM ubuntu:20.04
 FROM ubuntu:22.04
 LABEL maintainer="Lee Johnson <ljohnson@dettonville.org>"
+ARG BUILD_ID=devel
+ARG BUILD_DATE="2024-05-01
 LABEL build_date=$BUILD_DATE
 LABEL build=$BUILD_ID
 
