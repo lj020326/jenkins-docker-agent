@@ -1,6 +1,6 @@
 ## ref: https://schneide.blog/2019/10/21/using-parameterized-docker-builds/
-ARG IMAGE_REGISTRY=lj020326
-ARG BASE_IMAGE_LABEL=cicd-docker-in-docker
+ARG IMAGE_REGISTRY=docker.io
+ARG BASE_IMAGE_LABEL=lj020326/cicd-docker-in-docker
 ARG BUILD_ID=devel
 ARG BUILD_DATE="2024-05-01"
 

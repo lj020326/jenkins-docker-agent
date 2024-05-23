@@ -46,9 +46,12 @@ RUN addgroup -g ${gid} ${group} \
 
 # Adding the default user to groups used by Docker engine
 # "docker" for avoiding sudo, and "dockremap" if you enable user namespacing
+#RUN addgroup docker \
+#  && addgroup ${user} docker \
+#  && addgroup ${user} dockremap
 RUN addgroup docker \
-  && addgroup ${user} docker \
-  && addgroup ${user} dockremap
+  && adduser ${user} docker  \
+  && adduser ${user} dockremap
 
 # Custom start script
 COPY ./entrypoint.sh /usr/local/bin/entrypoint.sh

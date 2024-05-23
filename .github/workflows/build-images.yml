@@ -74,7 +74,7 @@ jobs:
         with:
           context: ${{ matrix.cicd-build-tools.context }}
           file: ${{ matrix.cicd-build-tools.dockerfile }}
-          build-args: IMAGE_REGISTRY=${{ github.repository_owner }},INTERNAL_IMAGE_BUILD=NO
+#          build-args: IMAGE_REGISTRY=${{ github.repository_owner }},INTERNAL_IMAGE_BUILD=NO
           push: true
           tags: ${{ matrix.cicd-build-tools.tags }}
           labels: |
@@ -87,7 +87,7 @@ jobs:
         with:
           context: ${{ matrix.jenkins-docker-cicd-agent.context }}
           file: ${{ matrix.jenkins-docker-cicd-agent.dockerfile }}
-          build-args: IMAGE_REGISTRY=${{ github.repository_owner }}
+#          build-args: IMAGE_REGISTRY=${{ github.repository_owner }}
           push: true
           tags: ${{ matrix.jenkins-docker-cicd-agent.tags }}
           labels: |
@@ -100,7 +100,7 @@ jobs:
         with:
           context: ${{ matrix.cicd-docker-in-docker.context }}
           file: ${{ matrix.cicd-docker-in-docker.dockerfile }}
-          build-args: IMAGE_REGISTRY=${{ github.repository_owner }}
+#          build-args: IMAGE_REGISTRY=${{ github.repository_owner }}
           push: true
           tags: ${{ matrix.cicd-docker-in-docker.tags }}
           labels: |
@@ -113,7 +113,7 @@ jobs:
         with:
           context: ${{ matrix.jenkins-dind-agent.context }}
           file: ${{ matrix.jenkins-dind-agent.dockerfile }}
-          build-args: IMAGE_REGISTRY=${{ github.repository_owner }}
+#          build-args: IMAGE_REGISTRY=${{ github.repository_owner }}
           push: true
           tags: ${{ matrix.jenkins-dind-agent.tags }}
           labels: |
@@ -126,7 +126,7 @@ jobs:
         with:
           context: ${{ matrix.jenkins-swarm-agent.context }}
           file: ${{ matrix.jenkins-swarm-agent.dockerfile }}
-          build-args: IMAGE_REGISTRY=${{ github.repository_owner }}
+#          build-args: IMAGE_REGISTRY=${{ github.repository_owner }}
           push: true
           tags: ${{ matrix.jenkins-swarm-agent.tags }}
           labels: |

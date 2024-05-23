@@ -4,7 +4,7 @@
 FROM ubuntu:22.04
 LABEL maintainer="Lee Johnson <ljohnson@dettonville.org>"
 ARG BUILD_ID=devel
-ARG BUILD_DATE="2024-05-01
+ARG BUILD_DATE="2024-05-01"
 LABEL build_date=$BUILD_DATE
 LABEL build=$BUILD_ID
 

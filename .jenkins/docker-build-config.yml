@@ -6,6 +6,7 @@ pipeline:
 
   buildArgs:
     IMAGE_REGISTRY: media.johnson.int:5000
+    BASE_IMAGE_LABEL: lj020326/cicd-build-tools
 
   buildImageList:
     - buildImageLabel: "cicd-build-tools"
