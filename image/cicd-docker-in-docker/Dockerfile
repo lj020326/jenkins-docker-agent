@@ -16,12 +16,12 @@ ARG uid=1000
 ARG gid=1000
 ARG jenkins_user_home=/home/${user}
 
-ENV JENKINS_USER_HOME=${jenkins_user_home} \
-  LANG=C.UTF-8 \
-  JAVA_HOME=/usr/lib/jvm/java-1.8-openjdk \
-  PATH=${PATH}:/usr/local/bin:/usr/lib/jvm/java-1.8-openjdk/jre/bin:/usr/lib/jvm/java-1.8-openjdk/bin \
-  DOCKER_IMAGE_CACHE_DIR=/docker-cache \
-  AUTOCONFIGURE_DOCKER_STORAGE=true
+ENV JENKINS_USER_HOME=${jenkins_user_home}
+ENV LANG=C.UTF-8
+ENV JAVA_HOME=/usr/lib/jvm/java-1.8-openjdk
+ENV PATH=${PATH}:/usr/local/bin:/usr/lib/jvm/java-1.8-openjdk/jre/bin:/usr/lib/jvm/java-1.8-openjdk/bin
+ENV DOCKER_IMAGE_CACHE_DIR=/docker-cache
+ENV AUTOCONFIGURE_DOCKER_STORAGE=true
 
 # Install required packages for running a Jenkins agent
 RUN apk add --no-cache \

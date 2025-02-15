@@ -1,28 +1,31 @@
 ---
 pipeline:
   alwaysEmailList: ljohnson@dettonville.org
-  runInParallel: true
   logLevel: DEBUG
+
+  runGroupsInParallel: false
+  runInParallel: true
 
   buildArgs:
     IMAGE_REGISTRY: media.johnson.int:5000
-    BASE_IMAGE_LABEL: lj020326/cicd-build-tools
 
-  buildImageList:
-    - buildImageLabel: "cicd-build-tools"
-      buildDir: "image/cicd-build-tools"
-
-    - buildImageLabel: "jenkins-docker-cicd-agent"
-      buildDir: "image/jenkins-cicd-agent"
-
-#    - buildImageLabel: "jenkins-docker-packer-agent"
-#      buildDir: "image/jenkins-packer-agent"
-
-    - buildImageLabel: "cicd-docker-in-docker"
-      buildDir: "image/cicd-docker-in-docker"
-
-    - buildImageLabel: "jenkins-dind-agent"
-      buildDir: "image/jenkins-dind-agent"
-
-    - buildImageLabel: "jenkins-swarm-agent"
-      buildDir: "image/jenkins-swarm-agent"
+  buildImageGroups:
+    base-images:
+      buildImageList:
+        - buildImageLabel: "cicd-build-tools"
+          buildDir: "image/cicd-build-tools"
+        - buildImageLabel: "cicd-docker-in-docker"
+          buildDir: "image/cicd-docker-in-docker"
+#        - buildImageLabel: "jenkins-docker-packer-agent"
+#          buildDir: "image/jenkins-packer-agent"
+    jenkins-agents:
+      buildArgs:
+        IMAGE_REGISTRY: media.johnson.int:5000
+        BASE_IMAGE_LABEL: cicd-build-tools
+      buildImageList:
+        - buildImageLabel: "jenkins-docker-cicd-agent"
+          buildDir: "image/jenkins-cicd-agent"
+        - buildImageLabel: "jenkins-dind-agent"
+          buildDir: "image/jenkins-dind-agent"
+        - buildImageLabel: "jenkins-swarm-agent"
+          buildDir: "image/jenkins-swarm-agent"

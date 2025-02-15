@@ -24,8 +24,8 @@ ARG JENKINS_USER_HOME=${JENKINS_USER_HOME:-/home/jenkins}
 #RUN echo 'Acquire::http::Proxy "http://127.0.0.1:8080";' >> /etc/apt/apt.conf
 
 # No interactive frontend during docker build
-#ENV DEBIAN_FRONTEND=noninteractive \
-#    DEBCONF_NONINTERACTIVE_SEEN=true
+#ENV DEBIAN_FRONTEND=noninteractive
+#ENV DEBCONF_NONINTERACTIVE_SEEN=true
 
 ARG DEBIAN_FRONTEND=noninteractive
 ARG DEBCONF_NONINTERACTIVE_SEEN=true
@@ -34,9 +34,9 @@ ARG APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1
 #Below HOME is needed to override seluser (selenium user)
 ENV HOME=${JENKINS_USER_HOME}
 
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US:en
-ENV LC_ALL en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
 ENV TERM="xterm-256color"
 
 USER root
@@ -62,8 +62,8 @@ RUN apt-get -q update &&\
 RUN rm -f /lib/systemd/system/systemd*udev* \
   && rm -f /lib/systemd/system/getty.target
 
-#ENV TZ "Europe/Paris"
-ENV TZ "America/New_York"
+#ENV TZ="Europe/Paris"
+ENV TZ="America/New_York"
 
 RUN echo "${TZ}" > /etc/timezone
 RUN ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime && locale-gen en_US.UTF-8
@@ -191,10 +191,10 @@ RUN which hadolint || true
 
 RUN ifconfig | awk '/inet addr/{print substr($2,6)}' ## Display IP address (optional)
 
-ENV HELM_VERSION v3.2.1
-ENV HELM_FILENAME helm-${HELM_VERSION}-linux-amd64.tar.gz
-#ENV HELM_URL https://storage.googleapis.com/kubernetes-helm/${HELM_FILENAME}
-ENV HELM_URL https://get.helm.sh/${HELM_FILENAME}
+ENV HELM_VERSION=v3.2.1
+ENV HELM_FILENAME=helm-${HELM_VERSION}-linux-amd64.tar.gz
+#ENV HELM_URL=https://storage.googleapis.com/kubernetes-helm/${HELM_FILENAME}
+ENV HELM_URL=https://get.helm.sh/${HELM_FILENAME}
 
 #curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
 
@@ -205,8 +205,8 @@ RUN tar -zxvf /tmp/${HELM_FILENAME} -C /tmp \
   && mv /tmp/linux-amd64/helm /bin/helm \
   && rm -rf /tmp/*
 
-ENV KUBECTL_VERSION v1.18.3
-ENV KUBECTL_URL https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl
+ENV KUBECTL_VERSION=v1.18.3
+ENV KUBECTL_URL=https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl
 
 ADD ${KUBECTL_URL} /tmp/kubectl
 RUN chmod +x /tmp/kubectl \
@@ -217,9 +217,9 @@ ADD https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64
 RUN chmod +x skaffold && mv skaffold /usr/local/bin
 RUN skaffold version
 
-ENV DRAFT_VERSION v0.16.0
-ENV DRAFT_FILENAME draft-${DRAFT_VERSION}-linux-amd64.tar.gz
-ENV DRAFT_URL https://azuredraft.blob.core.windows.net/draft/${DRAFT_FILENAME}
+ENV DRAFT_VERSION=v0.16.0
+ENV DRAFT_FILENAME=draft-${DRAFT_VERSION}-linux-amd64.tar.gz
+ENV DRAFT_URL=https://azuredraft.blob.core.windows.net/draft/${DRAFT_FILENAME}
 
 RUN echo DRAFT_URL : ${DRAFT_URL}
 

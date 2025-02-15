@@ -16,8 +16,8 @@ RUN curl -sSL https://get.docker.com/ | sh
 ADD ./wrapdocker.sh /usr/local/bin/wrapdocker
 RUN chmod +x /usr/local/bin/wrapdocker
 
-ENV SWARM_CLIENT_VERSION 2.0
-ENV DOCKER_COMPOSE_VERSION 1.3.3
+ENV SWARM_CLIENT_VERSION=2.0
+ENV DOCKER_COMPOSE_VERSION=1.3.3
 
 # Add a Jenkins user with permission to run docker commands
 RUN useradd -r -m -G docker jenkins

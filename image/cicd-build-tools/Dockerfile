@@ -30,10 +30,10 @@ ARG JENKINS_AGENT_WORKDIR="${WORKDIR}"/agent
 ENV TZ=Etc/UTC
 
 ## ref: https://serverfault.com/questions/618994/when-building-from-dockerfile-debian-ubuntu-package-install-debconf-noninteract
-ENV container docker
-ENV DEBIAN_FRONTEND noninteractive
-ENV JAVA_VERSION 18
-ENV PIP_ROOT_USER_ACTION ignore
+ENV container=docker
+ENV DEBIAN_FRONTEND=noninteractive
+ENV JAVA_VERSION=18
+ENV PIP_ROOT_USER_ACTION=ignore
 
 #################################################
 # Inspired by
@@ -90,9 +90,9 @@ RUN apt-get update -qqy && \
 ##
 RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && \
     locale-gen
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US:en
-ENV LC_ALL en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
 
 #RUN apt-get update -qqy && \
 #    apt-get -qqy --no-install-recommends install \
@@ -163,8 +163,8 @@ RUN apt-get -qqy --no-install-recommends install \
 RUN sed -i 's/securerandom\.source=file:\/dev\/random/securerandom\.source=file:\/dev\/urandom/' /etc/java-${JAVA_VERSION}-openjdk/security/java.security
 
 ## ref: https://www.howtoforge.com/how-to-install-java-openjdk-and-oracle-jdk-on-ubuntu-22-04/
-#ENV JAVA_HOME /opt/java/openjdk
-ENV JAVA_HOME /usr/lib/jvm/java-${JAVA_VERSION}-openjdk-amd64
+#ENV JAVA_HOME=/opt/java/openjdk
+ENV JAVA_HOME=/usr/lib/jvm/java-${JAVA_VERSION}-openjdk-amd64
 
 #####################################
 ## Groovy install
@@ -172,8 +172,8 @@ ENV JAVA_HOME /usr/lib/jvm/java-${JAVA_VERSION}-openjdk-amd64
 ## ref: https://github.com/groovy/docker-groovy/blob/master/jdk11/Dockerfile
 ##
 #####################################
-ENV GROOVY_VERSION 4.0.11
-ENV GROOVY_HOME /opt/groovy
+ENV GROOVY_VERSION=4.0.11
+ENV GROOVY_HOME=/opt/groovy
 RUN set -o errexit -o nounset \
     && echo "Downloading Groovy" \
     && curl -fsSL -o groovy.zip "https://archive.apache.org/dist/groovy/${GROOVY_VERSION}/distribution/apache-groovy-binary-${GROOVY_VERSION}.zip" \
@@ -276,18 +276,18 @@ RUN mkdir -p ${WORKDIR}/.ansible \
 #==========
 # Maven
 #==========
-#ENV MAVEN_VERSION 3.6.3
+#ENV MAVEN_VERSION=3.6.3
 RUN MAVEN_VERSION=$(curl -sX GET https://archive.apache.org/dist/maven/maven-3/ | grep href | sed 's/.*\/">\(.*\)\/<.*/\1/' | uniq | tail -1) \
   && curl -fsSL http://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar xzf - -C /usr/share \
   && mv /usr/share/apache-maven-$MAVEN_VERSION /usr/share/maven \
   && ln -s /usr/share/maven/bin/mvn /usr/bin/mvn
 
-ENV MAVEN_HOME /usr/share/maven
+ENV MAVEN_HOME=/usr/share/maven
 
 #==========
 # Gradle
 #==========
-#ENV GRADLE_VERSION 6.5.1
+#ENV GRADLE_VERSION=6.5.1
 RUN GRADLE_VERSION=$(curl -sX GET https://services.gradle.org/distributions/ | grep bin.zip | sed 's/.*gradle-\(.*\)-bin.*/\1/' | uniq | head -1) \
   && wget -q https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip -P /tmp \
   && unzip -d /opt/gradle /tmp/gradle-${GRADLE_VERSION}-bin.zip \
@@ -297,7 +297,7 @@ RUN GRADLE_VERSION=$(curl -sX GET https://services.gradle.org/distributions/ | g
 #==========
 # Ant
 #==========
-#ENV ANT_VERSION 1.10.11
+#ENV ANT_VERSION=1.10.11
 
 #RUN ANT_VERSION=$(wget -q -O -  https://downloads.apache.org/ant/binaries/ | grep tar.bz | sed 's/.*apache-ant-\(.*\)-bin.*/\1/' | uniq | head -1) && \
 RUN ANT_VERSION=$(curl -sX GET https://downloads.apache.org/ant/binaries/ | grep tar.bz | sed 's/.*apache-ant-\(.*\)-bin.*/\1/' | uniq | head -1) \
@@ -305,7 +305,7 @@ RUN ANT_VERSION=$(curl -sX GET https://downloads.apache.org/ant/binaries/ | grep
   && mv /usr/share/apache-ant-$ANT_VERSION /usr/share/ant \
   && ln -s /usr/share/ant/bin/ant /usr/bin/ant
 
-ENV ANT_HOME /usr/share/ant
+ENV ANT_HOME=/usr/share/ant
 
 #==========
 # Dell racadm CLI
@@ -315,10 +315,10 @@ ENV ANT_HOME /usr/share/ant
 #   https://www.dell.com/community/Systems-Management-General/SSL-Library-error-and-idracadm7/td-p/4767653
 #==========
 ENV IDRAC_TOOLS_URL="https://archiva.admin.dettonville.int/repository/snapshots/org/dettonville/infra/iDRACTools/9.4.0-3733-Debian.15734_amd64/iDRACTools-9.4.0-3733-Debian.15734_amd64.tgz"
-ENV CURL_INSTALL_IDRAC_TOOLS="curl -kfsSL ${IDRAC_TOOLS_URL} | tar xzf - -C /usr/share \
+ENV CURL_INSTALL_IDRAC_TOOLS="curl -kfsSL ${IDRAC_TOOLS_URL} | tar xzf - -C /usr/share=\
     && dpkg -i /usr/share/iDRACTools/*.deb \
     && ln -s /opt/dell/srvadmin/bin/idracadm7 /usr/local/bin/racadm"
-RUN if [ "$INTERNAL_IMAGE_BUILD" == "YES" ] ; then eval ${CURL_INSTALL_IDRAC_TOOLS} ; else echo "[INTERNAL_IMAGE_BUILD=${INTERNAL_IMAGE_BUILD}]: Idrac Tools not installed" ; fi
+RUN if [[ "${INTERNAL_IMAGE_BUILD}" == "YES" ]] ; then eval ${CURL_INSTALL_IDRAC_TOOLS} ; else echo "[INTERNAL_IMAGE_BUILD=${INTERNAL_IMAGE_BUILD}]: Idrac Tools not installed" ; fi
 #COPY files/iDRACTools-9.4.0-3733-Debian.15734_amd64.tgz /var/tmp
 #RUN tar -xzf /var/tmp/iDRACTools-9.4.0-3733-Debian.15734_amd64.tgz -C /usr/share \
 #    && dpkg -i /usr/share/iDRACTools/*.deb \
@@ -467,8 +467,8 @@ RUN curl -fsSL https://deb.nodesource.com/setup_current.x | bash \
 ## Selenium
 ##==========
 #
-#ENV SELENIUM_MAJOR_VERSION 3.141
-#ENV SELENIUM_VERSION 3.141.59
+#ENV SELENIUM_MAJOR_VERSION=3.141
+#ENV SELENIUM_VERSION=3.141.59
 #RUN  mkdir -p /opt/selenium \
 #  && wget --no-verbose http://selenium-release.storage.googleapis.com/$SELENIUM_MAJOR_VERSION/selenium-server-standalone-$SELENIUM_VERSION.jar -O /opt/selenium/selenium-server-standalone.jar
 #
@@ -476,10 +476,10 @@ RUN curl -fsSL https://deb.nodesource.com/setup_current.x | bash \
 #
 ## https://github.com/SeleniumHQ/docker-selenium/blob/master/StandaloneFirefox/Dockerfile
 #
-#ENV SCREEN_WIDTH 1360
-#ENV SCREEN_HEIGHT 1020
-#ENV SCREEN_DEPTH 24
-#ENV DISPLAY :99.0
+#ENV SCREEN_WIDTH=1360
+#ENV SCREEN_HEIGHT=1020
+#ENV SCREEN_DEPTH=24
+#ENV DISPLAY=:99.0
 #
 
 ##=====
