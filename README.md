@@ -1,5 +1,5 @@
 [![Docker images build](https://github.com/lj020326/jenkins-docker-agent/actions/workflows/build-images.yml/badge.svg)](https://github.com/lj020326/jenkins-docker-agent/actions/workflows/build-images.yml)
-[![License](https://img.shields.io/badge/license-GPLv3-brightgreen.svg?style=flat)](LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)](LICENSE)
 
 # jenkins-docker-agent
 
