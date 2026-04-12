@@ -31,11 +31,6 @@ RUN chmod +x /usr/local/bin/wrapdocker
 ARG SWARM_CLIENT_VERSION=3.25
 #ARG DOCKER_COMPOSE_VERSION=1.3.3
 
-## This is done in the base CICD tools image
-# Install necessary packages
-#RUN apt-get update && apt-get install -y curl zip openjdk-7-jre-headless supervisor && rm -rf /var/lib/apt/lists/*
-#RUN curl -fsSL https://omnitruck.chef.io/install.sh | sudo bash -s -- -P inspec
-
 RUN apt-get install -y supervisor && rm -rf /var/lib/apt/lists/*
 
 # Install Jenkins Swarm Client

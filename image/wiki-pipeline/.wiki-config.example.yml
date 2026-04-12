@@ -1,0 +1,143 @@
+# ================================================
+# Wiki Pipeline Configuration - Best Defaults
+# Copy this file to .wiki-config.yml and customize
+# ================================================
+
+wiki:
+  # Output directory for generated documentation
+  output_dir: "wiki"
+
+  # Top-level wiki index settings
+  title: "Ansible Datacenter Wiki"
+  subtitle: "Central documentation for all roles, playbooks, and infrastructure automation"
+  description: |
+    This wiki is automatically generated and maintained by the LLM-powered wiki pipeline.
+    It provides professional, GitHub-native documentation for the ansible-datacenter repository.
+
+  # Roles to completely skip during ingestion (test, deprecated, or very large roles)
+  roles_ignore:
+    - bootstrap_aibrix
+    - bootstrap_solr_cloud
+    - bootstrap_zookeeper
+    - run_inspec
+    - run_terraform
+    # Add any other roles you want ignored here
+
+  # Roles that should appear at the very top of the index (most important)
+  # Add your top 20-50 most important roles here
+  priority_roles:
+    - apply_common_groups
+    - apply_ping_test
+    - bootstrap_ansible_controller
+    - bootstrap_docker
+    - bootstrap_docker_stack
+    - bootstrap_gpu_drivers
+    - bootstrap_jenkins_agent
+    - bootstrap_kubernetes
+    - bootstrap_kvm
+    - bootstrap_linux
+    - bootstrap_linux_core
+    - bootstrap_linux_systemd
+    - bootstrap_llm_host
+    - bootstrap_netplan
+    - bootstrap_pki
+    - deploy_pki
+    - deploy_vm
+
+  # LLM settings (applied to all LLM calls: ingest, compile, lint, qa)
+  llm:
+    temperature: 0.25      # Lower = more consistent, higher = more creative
+    max_tokens: 4096
+    timeout: 600           # 10 minutes (good for large roles)
+
+  # ================================================
+  # Prompt Templates - Fully Customizable
+  # ================================================
+
+  role_prompt:
+    prefix: |
+      You are an expert Ansible architect and excellent technical writer.
+      Create a **comprehensive, high-quality, professional documentation page** for this Ansible role.
+    suffix: |
+      Requirements:
+      - Start with clean YAML frontmatter (title, original_role, category, type, tags)
+      - One-paragraph summary of the role's purpose
+      - Sections: Variables, Usage, Dependencies, Tags, Best Practices, Molecule Tests (if any)
+      - Include a '## Backlinks' section with relative links back to original files.
+        Note the "wiki/" directory is 1 level below the root level and all back-references must add "../".
+      - Double-underscore variables (e.g. __internal_var) are internal role variables only. Never document them as user-configurable.
+      - Do not invent "Related Roles" that do not exist in the repository.
+      - Use only real relative links to files that actually exist.
+      - Professional tone, clear headings, excellent readability.
+      - Use only standard GitHub Markdown. No Obsidian syntax.
+
+  compile_prompt:
+    prefix: |
+      You are an expert technical writer.
+      Improve and standardize this documentation page for GitHub rendering.
+      Keep all original information and meaning.
+      Use clean, professional Markdown.
+    suffix: |
+      Add or improve YAML frontmatter (title, original_path, category, tags).
+      Ensure clear structure, proper headings, and a "Backlinks" section if missing.
+      Output only the improved Markdown.
+
+  lint_prompt:
+    prefix: |
+      You are a strict technical documentation reviewer.
+      Analyze this documentation page for quality, consistency, and completeness.
+    suffix: |
+      Return findings in this exact format only:
+      ### {filename}
+      **Issues:**
+      - issue 1
+      - issue 2
+      **Suggestions:**
+      - suggestion 1
+      - suggestion 2
+
+  qa_prompt: |
+    You are a helpful technical support engineer for this Ansible datacenter repository.
+    Generate 8-12 important, frequently asked Q&A pairs based on the content of this wiki.
+    Focus on common user questions, troubleshooting steps, best practices, and gotchas.
+    Format as a clean Q&A list using Markdown.
+
+  # Group roles into logical categories (optional but recommended)
+  categories:
+    bootstrap:
+      title: "Bootstrap & Foundation Roles"
+      description: "Core OS and infrastructure setup"
+      roles:
+        - bootstrap_docker
+        - bootstrap_linux_core
+        - bootstrap_kubernetes
+        - bootstrap_pki
+        - bootstrap_netplan
+
+    deployment:
+      title: "Deployment & Provisioning"
+      description: "VM, container, and application deployment"
+      roles:
+        - deploy_vm
+        - deploy_pki_certs
+        - deploy_authorized_keys
+
+    networking:
+      title: "Networking & Security"
+      description: "Network configuration and hardening"
+      roles:
+        - ansible_ping_test
+        - bootstrap_netplan
+        - bootstrap_linux_firewalld
+        - bootstrap_sshd
+
+    monitoring:
+      title: "Monitoring & Observability"
+      description: "Telemetry, logging, and alerting"
+      roles:
+        - bootstrap_telegraf
+        - bootstrap_postfix
+
+  # Default category for any role not listed above
+  default_category: "other"
+  default_category_title: "Other Roles"
