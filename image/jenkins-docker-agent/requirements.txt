@@ -1,0 +1,42 @@
+#ansible-lint
+ansible-lint-junit
+ansible-lint==25.12.2
+cryptography
+defusedxml
+dnspython
+docker
+edgegrid-python
+huggingface_hub[cli,hf_transfer]
+hvac
+jmespath
+kubernetes
+netaddr
+passlib
+py
+pyVim
+pyVmomi
+pycurl
+pyopenssl
+pytest
+pytest-parallel
+pytest-shell-utilities
+pytest-testinfra
+python-dateutil
+python-hcl2
+python-ldap
+pytz
+pywinrm
+pyyaml
+requests
+requests-credssp
+ruamel.yaml
+yaml-lint-to-junit-xml
+yamllint
+
+#####################
+## molecule related requirements
+## ref: https://molecule.readthedocs.io/installation/#pip
+## ref: https://github.com/ansible-community/molecule-plugins
+#molecule[docker]
+molecule
+molecule-plugins[docker]

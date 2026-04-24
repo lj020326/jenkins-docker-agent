@@ -4,6 +4,7 @@
 # Set the Docker version you want to use
 FROM docker:18.02-dind
 LABEL maintainer="Lee Johnson <ljohnson@dettonville.org>"
+
 ARG BUILD_ID=devel
 ARG BUILD_DATE="2024-05-01"
 LABEL build_date=$BUILD_DATE

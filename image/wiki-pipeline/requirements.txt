@@ -1,0 +1,8 @@
+litellm>=1.50.0
+pyyaml>=6.0
+markdown>=3.6
+python-frontmatter>=1.0.0
+matplotlib>=3.8
+pandas>=2.2
+networkx>=3.3
+graphviz>=0.20

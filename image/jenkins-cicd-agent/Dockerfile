@@ -2,8 +2,6 @@
 ARG IMAGE_REGISTRY=docker.io
 ARG BASE_IMAGE_LABEL=lj020326/cicd-build-tools
 FROM $IMAGE_REGISTRY/$BASE_IMAGE_LABEL
-ARG BUILD_ID=devel
-ARG BUILD_DATE="2024-05-01"
 
 ## refs:
 ##   https://github.com/cloudbees/jnlp-slave-with-java-build-tools-dockerfile/blob/master/Dockerfile
@@ -13,6 +11,10 @@ ARG BUILD_DATE="2024-05-01"
 FROM jenkins/agent as builder
 
 FROM $IMAGE_REGISTRY/$BASE_IMAGE_LABEL:latest
+
+ARG BUILD_ID=devel
+ARG BUILD_DATE="2024-05-01"
+
 LABEL maintainer="Lee Johnson <ljohnson@dettonville.org>"
 LABEL build_date=$BUILD_DATE
 LABEL build=$BUILD_ID
