@@ -2,22 +2,17 @@
 ## ref: https://schneide.blog/2019/10/21/using-parameterized-docker-builds/
 ARG IMAGE_REGISTRY=docker.io
 ARG BASE_IMAGE_LABEL=lj020326/cicd-build-tools
+FROM $IMAGE_REGISTRY/$BASE_IMAGE_LABEL:latest
+
 ARG BUILD_ID=devel
 ARG BUILD_DATE="2024-05-01"
-
-FROM $IMAGE_REGISTRY/$BASE_IMAGE_LABEL:latest
 LABEL maintainer="Lee Johnson <ljohnson@dettonville.org>"
 LABEL build_date=$BUILD_DATE
 LABEL build=$BUILD_ID
 
 USER root
 
-RUN apt-get update -qq && apt-get install -qqy \
-    apt-transport-https \
-    ca-certificates \
-    curl \
-    lxc \
-    iptables
+RUN apt-get update -qq && apt-get install -qqy lxc iptables
 
 ## docker already in base image
 # Install Docker from Docker Inc. repositories.
@@ -30,11 +25,6 @@ RUN chmod +x /usr/local/bin/wrapdocker
 #ARG SWARM_CLIENT_VERSION=2.0
 ARG SWARM_CLIENT_VERSION=3.25
 #ARG DOCKER_COMPOSE_VERSION=1.3.3
-
-## This is done in the base CICD tools image
-# Install necessary packages
-#RUN apt-get update && apt-get install -y curl zip openjdk-7-jre-headless supervisor && rm -rf /var/lib/apt/lists/*
-#RUN curl -fsSL https://omnitruck.chef.io/install.sh | sudo bash -s -- -P inspec
 
 RUN apt-get install -y supervisor && rm -rf /var/lib/apt/lists/*
 

@@ -1,0 +1,17 @@
+awscli
+awxkit
+cryptography
+hvac
+jinja2
+jmespath
+netaddr
+passlib
+pyopenssl
+python-hcl2
+pytz
+pywinrm
+pyyaml
+requests
+selenium
+yq
+git+https://github.com/vmware/vsphere-automation-sdk-python.git
