@@ -1,17 +1,54 @@
 awscli
 awxkit
 cryptography
+defusedxml
+distlib
+dnspython
+docker
+edgegrid-python
+huggingface_hub[cli,hf_transfer]
 hvac
 jinja2
 jmespath
+kubernetes
 netaddr
+packaging
 passlib
+py
+pyVim
+pyVmomi
+pycurl
 pyopenssl
+pytest
+pytest-parallel
+pytest-shell-utilities
+pytest-testinfra
+python-dateutil
 python-hcl2
+python-ldap
 pytz
 pywinrm
 pyyaml
 requests
+requests-credssp
+ruamel.yaml
 selenium
-yq
-git+https://github.com/vmware/vsphere-automation-sdk-python.git
+setuptools
+yaml-lint-to-junit-xml
+yamllint
+## yq installed from binary
+#yq
+## required for vmware collection automation
+# git+https://github.com/vmware/vsphere-automation-sdk-python.git
+## curl -L curl -L https://github.com/vmware/vsphere-automation-sdk-python/archive/refs/tags/v8.0.3.0.tar.gz -o vsphere_automation_sdk-8.0.3.0.tar.gz
+## to test if the sdk successfully installed:
+## docker run --rm <your-image-name> python3 -c "import com.vmware.vapi.std.errors_client; print('SDK Import Successful')"
+#/var/tmp/vsphere_automation_sdk.tar.gz
+
+#####################
+## molecule related requirements
+## ref: https://molecule.readthedocs.io/installation/#pip
+## ref: https://github.com/ansible-community/molecule-plugins
+#molecule[docker]
+molecule
+molecule-plugins[docker]

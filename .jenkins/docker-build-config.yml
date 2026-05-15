@@ -2,6 +2,7 @@
 alwaysEmailList: ljohnson@dettonville.org
 logLevel: DEBUG
 maxRandomDelaySeconds: 20
+failFast: true
 
 runGroupsInParallel: false
 runInParallel: true
@@ -9,27 +10,26 @@ runInParallel: true
 buildArgs:
   IMAGE_REGISTRY: media.johnson.int:5000
 
+buildTags:
+  - "latest"
+
 buildImageGroups:
   base-images:
     buildImageList:
-      - buildImageName: "wiki-pipeline"
-        buildDir: "image/wiki-pipeline"
-      - buildImageName: "jenkins-docker-agent"
-        buildDir: "image/jenkins-docker-agent"
       - buildImageName: "cicd-build-tools"
         buildDir: "image/cicd-build-tools"
-      - buildImageName: "cicd-docker-in-docker"
-        buildDir: "image/cicd-docker-in-docker"
-#        - buildImageName: "jenkins-docker-packer-agent"
-#          buildDir: "image/jenkins-packer-agent"
   jenkins-agents:
     buildArgs:
       IMAGE_REGISTRY: media.johnson.int:5000
       BASE_IMAGE_LABEL: cicd-build-tools
     buildImageList:
+      - buildImageName: "jenkins-docker-agent"
+        buildDir: "image/jenkins-docker-agent"
       - buildImageName: "jenkins-docker-cicd-agent"
         buildDir: "image/jenkins-cicd-agent"
       - buildImageName: "jenkins-dind-agent"
         buildDir: "image/jenkins-dind-agent"
       - buildImageName: "jenkins-swarm-agent"
         buildDir: "image/jenkins-swarm-agent"
+      - buildImageName: "wiki-pipeline"
+        buildDir: "image/wiki-pipeline"

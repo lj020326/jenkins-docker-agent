@@ -246,7 +246,7 @@ def load_config(config_path: str = ".wiki-config.yml", force_reload: bool = Fals
             wiki_config["wiki"].update(user_config.get("wiki"))
 
     _config_cache = wiki_config
-    # log.debug("_config_cache=\n" + pprint.pformat(_config_cache))
+    log.trace("_config_cache=\n" + pprint.pformat(_config_cache))
 
     return _config_cache
 

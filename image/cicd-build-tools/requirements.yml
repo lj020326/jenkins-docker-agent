@@ -1,0 +1,39 @@
+collections:
+  - name: ansible.posix
+  - name: ansible.windows
+  - name: ansible.utils
+  - name: ansible.netcommon
+
+  - name: community.crypto
+  - name: community.dns
+  - name: community.docker
+  - name: community.general
+  - name: community.hashi_vault
+  - name: community.libvirt
+  - name: community.molecule
+  - name: community.mysql
+  - name: community.proxmox
+  - name: community.vmware
+  - name: community.windows
+#  - name: community.postgresql
+
+  - name: containers.podman
+  - name: vmware.vmware
+  - name: microsoft.ad
+
+  - name: chocolatey.chocolatey
+
+  - name: dettonville.utils
+  - name: dettonville.git_inventory
+
+  - name: awx.awx
+  - name: dellemc.openmanage
+  - name: kubernetes.core
+
+  - name: sivel.toiletwater
+
+  - name: ngine_io.cloudstack
+#  - name: redhat.satellite
+
+  - name: amazon.aws
+  - name: openstack.cloud

@@ -39,7 +39,7 @@ def generate_wiki_index(
     index_content += f"{wiki_config.get('description', '')}\n\n"
 
     # 3. Handle Priority Roles Section
-    log.debug("   Processing Priority roles")
+    log.debug("   ⏭️  Processing Priority roles")
     priority_roles = wiki_config.get("priority_roles", [])
     if priority_roles:
         index_content += "## Priority Roles\n\n"
@@ -58,7 +58,7 @@ def generate_wiki_index(
 
     # Map roles based on config categories
     if "categories" in wiki_config:
-        log.debug("   Mapping roles to defined categories")
+        log.debug("   ⏭️  Mapping roles to defined categories")
         for cat_name, cat_data in wiki_config["categories"].items():
             for role_name in cat_data.get("roles", []):
                 if role_name in active_role_names:
@@ -66,14 +66,14 @@ def generate_wiki_index(
                     assigned_roles.add(role_name)
 
     # 5. Handle Remaining Roles (Default Category)
-    log.debug("   Assigning remaining roles to default category")
+    log.debug("   ⏭️  Assigning remaining roles to default category")
     default_cat = wiki_config.get("default_category", "other")
     for role_name in active_role_names:
         if role_name not in assigned_roles:
             categories[default_cat].append(role_name)
 
     # 6. Render Categories Section
-    log.debug("   Rendering categories to index")
+    log.debug("   ⏭️  Rendering categories to index")
     for cat_name in sorted(categories.keys()):
         role_list = categories[cat_name]
         if not role_list:

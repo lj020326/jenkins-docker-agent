@@ -1,50 +1,32 @@
 # Dockerfile - wiki-pipeline
 
-# ARG instructions used in FROM must come before the FROM instruction
-ARG PYTHON_VERSION="3.12"
+ARG IMAGE_REGISTRY=docker.io
+ARG BASE_IMAGE_LABEL=lj020326/cicd-build-tools:latest
+FROM $IMAGE_REGISTRY/$BASE_IMAGE_LABEL
 
-# Use a Python base image that matches the desired Python version
-# We use a slim Debian-based image for smaller size.
-FROM python:${PYTHON_VERSION}-slim-bookworm
+USER root
 
-ARG BUILD_ID=devel
-ARG BUILD_DATE="2024-05-01"
-LABEL build_date=$BUILD_DATE
-LABEL build=$BUILD_ID
+# 1. Install specific Python needs for the wiki-pipeline
+RUN apt-get update -qqy && \
+    apt-get -qqy --no-install-recommends install \
+      python3-pip \
+      python3-venv \
+      graphviz && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates \
-    dnsutils \
-    iproute2 \
-    iputils-ping \
-    inetutils-telnet \
-    openssh-client \
-    ssh-client \
-    bash \
-    git \
-    curl \
-    wget \
-    tree \
-    jq \
-    graphviz \
-    && rm -rf /var/lib/apt/lists/*
+# 2. Setup Application
+WORKDIR /app
 
-# Setup ssh-agent socket for Jenkins
-RUN mkdir -p /root/.ssh && chmod 700 /root/.ssh
-
+#==========
+# PIP - Install Python dependencies
+#==========
 ## ref: https://github.com/pypa/pip/issues/11179#issuecomment-1152766374
 ENV PIP_ROOT_USER_ACTION=ignore
 
-RUN python -m pip install --disable-pip-version-check --upgrade pip
-
-WORKDIR /app
-
-# Install Python dependencies
 COPY requirements.txt .
 RUN pip install --disable-pip-version-check --no-cache-dir -r requirements.txt
 
-# Copy scripts and set permissions in one go
+# 3. Copy scripts and entrypoint
 COPY scripts/ /app/scripts/
 RUN chmod +x /app/scripts/*.py
 

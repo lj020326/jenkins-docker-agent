@@ -82,7 +82,7 @@ def summarize_role(
         (role_prompt.get("suffix", "") or "")
     )
 
-    log.info(f"   Generating documentation for role: {role_name} ({len(files_content)} files)")
+    log.info(f"   ⏭️  Generating documentation for role: {role_name} ({len(files_content)} files)")
 
     try:
         md_content = llm_client.get_response(prompt)
@@ -151,7 +151,7 @@ def ingest_ansible_yaml(
 
     for role_path in all_roles:
         if limit and processed >= limit:
-            log.info(f"   Processed file limit hit => {processed}")
+            log.info(f"   ⏭️  Processed file limit hit => {processed}")
             break
 
         role_id = role_path.name
@@ -169,7 +169,7 @@ def ingest_ansible_yaml(
         state_hash = state["ingest"].get(role_id)
 
         if changed_only and state_hash == current_hash:
-            log.debug(f"   Skipping {role_id} (unchanged)")
+            log.debug(f"   ⏭️  Skipping {role_id} (unchanged)")
             continue
 
         log.info(f"   📝 Processing: {role_id}")

@@ -1,6 +1,6 @@
 ## ref: https://schneide.blog/2019/10/21/using-parameterized-docker-builds/
 ARG IMAGE_REGISTRY=docker.io
-ARG BASE_IMAGE_LABEL=lj020326/cicd-build-tools
+ARG BASE_IMAGE_LABEL=lj020326/cicd-build-tools:latest
 FROM $IMAGE_REGISTRY/$BASE_IMAGE_LABEL
 
 ## refs:

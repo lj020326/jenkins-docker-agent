@@ -52,6 +52,12 @@ graph TD
     IX -->|Final Artifact| OUT[wiki/README.md]
 ```
 
+## Jenkins Pipeline to run wiki-pipeline
+
+The execution of the wiki-pipeline can be managed via the Jenkins pipeline below:
+
+* **[Jenkins Wiki Pipeline](https://github.com/lj020326/pipeline-automation-lib/blob/main/vars/runWikiPipeline.groovy)**
+
 ## Features
 
 * **Harvests legacy Markdown files**: Collects `README.md`, `TESTING.md`, and other docs from the repo into a raw staging area.

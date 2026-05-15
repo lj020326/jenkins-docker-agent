@@ -67,7 +67,7 @@ def harvest(
 
         # Check if the path is now ignored by config or git
         if is_ignored(rel_path, harvest_ignore, spec=ignore_spec) or is_ignored_by_git(rel_path, root_dir):
-            log.trace(f"   Removing stale file: {rel_path}")
+            log.trace(f"   ⏭️  Removing stale file: {rel_path}")
             os.remove(harvested_file)
             removed_count += 1
 
@@ -94,7 +94,7 @@ def harvest(
     processed = 0
     for md_file in sorted_files:
         if limit and processed >= limit:
-            log.debug(f"   Processed file limit hit => {processed}")
+            log.debug(f"   ⏭️  Processed file limit hit => {processed}")
             break
 
         # 1. Consolidated Safety Check:
@@ -128,7 +128,7 @@ def harvest(
         state_hash = state["harvest"].get(file_id)
 
         if changed_only and state_hash == current_hash:
-            log.debug(f"   Skipping harvest for {file_id} (unchanged)")
+            log.debug(f"   ⏭️  Skipping harvest for {file_id} (unchanged)")
             continue
 
         log.trace(f"   compile({file_id}): (changed)")
@@ -155,7 +155,7 @@ def harvest(
 
         processed += 1
 
-        log.debug(f"   Harvested: {rel_path}")
+        log.debug(f"   ⏭️  Harvested: {rel_path}")
 
     save_state(state_path, state)
 

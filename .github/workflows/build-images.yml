@@ -24,14 +24,6 @@ jobs:
 #      max-parallel: 4
       matrix:
         versions:
-          - name: wiki-pipeline
-            dockerfile: image/wiki-pipeline/Dockerfile
-            context: image/wiki-pipeline
-            tag: latest
-          - name: jenkins-docker-agent
-            dockerfile: image/jenkins-docker-agent/Dockerfile
-            context: image/jenkins-docker-agent
-            tag: latest
           - name: cicd-build-tools
             dockerfile: image/cicd-build-tools/Dockerfile
             context: image/cicd-build-tools
@@ -40,10 +32,6 @@ jobs:
             dockerfile: image/jenkins-cicd-agent/Dockerfile
             context: image/jenkins-cicd-agent
             tag: latest
-          - name: cicd-docker-in-docker
-            dockerfile: image/cicd-docker-in-docker/Dockerfile
-            context: image/cicd-docker-in-docker
-            tag: latest
           - name: jenkins-dind-agent
             dockerfile: image/jenkins-dind-agent/Dockerfile
             context: image/jenkins-dind-agent
@@ -51,6 +39,14 @@ jobs:
           - name: jenkins-swarm-agent
             dockerfile: image/jenkins-swarm-agent/Dockerfile
             context: image/jenkins-swarm-agent
+            tag: latest
+          - name: wiki-pipeline
+            dockerfile: image/wiki-pipeline/Dockerfile
+            context: image/wiki-pipeline
+            tag: latest
+          - name: jenkins-docker-agent
+            dockerfile: image/jenkins-docker-agent/Dockerfile
+            context: image/jenkins-docker-agent
             tag: latest
 
     steps:

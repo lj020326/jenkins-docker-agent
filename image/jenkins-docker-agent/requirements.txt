@@ -1,3 +1,4 @@
+ansible-core
 #ansible-lint
 ansible-lint-junit
 ansible-lint==25.12.2

@@ -55,7 +55,7 @@ def lint_wiki(
     processed = 0
     for md_file in sorted(effective_wiki_dir.rglob("*.md")):
         if limit and processed >= limit:
-            log.debug(f"   Processed file limit hit => {processed}")
+            log.debug(f"   ⏭️  Processed file limit hit => {processed}")
             break
 
         if md_file.name == "lint-report.md":
@@ -66,14 +66,14 @@ def lint_wiki(
         state_hash = state["lint"].get(file_id)
 
         if changed_only and state_hash == current_hash:
-            log.debug(f"   Skipping lint for {file_id} (unchanged)")
+            log.debug(f"   ⏭️  Skipping lint for {file_id} (unchanged)")
             continue
 
         log.trace(f"   lint({file_id}): (changed)")
         log.trace(f"     state_hash   => [{state_hash}]")
         log.trace(f"     current_hash => [{current_hash}]")
 
-        log.debug(f"   Linting {md_file.relative_to(effective_wiki_dir)}")
+        log.debug(f"   ⏭️  Linting {md_file.relative_to(effective_wiki_dir)}")
 
         content = md_file.read_text(encoding="utf-8")
 
@@ -93,13 +93,13 @@ def lint_wiki(
             if "issue" in result.lower() or "missing" in result.lower() or "suggest" in result.lower():
                 issues.append(result)
 
-            log.info(f"   Linted {md_file.name}")
+            log.info(f"   ⏭️  Linted {md_file.name}")
 
             state["lint"][file_id] = current_hash
             processed += 1
 
         except Exception as e:
-            log.error(f"   Skipping {md_file.name} due to error: {e}")
+            log.error(f"   ⏭️  Skipping {md_file.name} due to error: {e}")
             # Optionally continue to the next file
             continue
 

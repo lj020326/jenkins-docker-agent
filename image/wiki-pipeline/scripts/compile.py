@@ -49,7 +49,7 @@ def compile_raw_to_wiki(
     processed = 0
     for md_file in sorted(effective_raw_dir.rglob("*.md")):
         if limit and processed >= limit:
-            log.debug(f"   Processed file limit hit => {processed}")
+            log.debug(f"   ⏭️  Processed file limit hit => {processed}")
             break
 
         # Skip internal index files if they exist in raw
@@ -61,14 +61,14 @@ def compile_raw_to_wiki(
         state_hash = state["compile"].get(file_id)
 
         if changed_only and state_hash == current_hash:
-            log.debug(f"   Skipping compile for {file_id} (unchanged)")
+            log.debug(f"   ⏭️  Skipping compile for {file_id} (unchanged)")
             continue
 
         log.trace(f"   harvest({file_id}): (changed)")
         log.trace(f"     state_hash   => [{state_hash}]")
         log.trace(f"     current_hash => [{current_hash}]")
 
-        log.debug(f"   Compiling {md_file.relative_to(effective_raw_dir)}")
+        log.debug(f"   ⏭️  Compiling {md_file.relative_to(effective_raw_dir)}")
 
         content = md_file.read_text(encoding="utf-8")
 
@@ -94,7 +94,7 @@ def compile_raw_to_wiki(
             processed += 1
 
         except Exception as e:
-            log.error(f"   Skipping {md_file.name} due to error: {e}")
+            log.error(f"   ⏭️  Skipping {md_file.name} due to error: {e}")
             # Optionally continue to the next file
             continue
 
