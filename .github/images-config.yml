@@ -1,0 +1,37 @@
+# .github/images-config.yml
+images:
+  - name: cicd-build-tools
+    dockerfile: image/cicd-build-tools/Dockerfile
+    context: image/cicd-build-tools
+    tag: latest
+    type: base
+
+  - name: jenkins-docker-cicd-agent
+    dockerfile: image/jenkins-cicd-agent/Dockerfile
+    context: image/jenkins-cicd-agent
+    tag: latest
+    type: dependent
+
+  - name: jenkins-dind-agent
+    dockerfile: image/jenkins-dind-agent/Dockerfile
+    context: image/jenkins-dind-agent
+    tag: latest
+    type: dependent
+
+  - name: jenkins-swarm-agent
+    dockerfile: image/jenkins-swarm-agent/Dockerfile
+    context: image/jenkins-swarm-agent
+    tag: latest
+    type: dependent
+
+  - name: wiki-pipeline
+    dockerfile: image/wiki-pipeline/Dockerfile
+    context: image/wiki-pipeline
+    tag: latest
+    type: dependent
+
+  - name: jenkins-docker-agent
+    dockerfile: image/jenkins-docker-agent/Dockerfile
+    context: image/jenkins-docker-agent
+    tag: latest
+    type: dependent

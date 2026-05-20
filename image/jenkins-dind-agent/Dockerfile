@@ -1,16 +1,18 @@
 ## ref: https://schneide.blog/2019/10/21/using-parameterized-docker-builds/
 ARG IMAGE_REGISTRY=docker.io
-ARG BASE_IMAGE_LABEL=lj020326/cicd-docker-in-docker
-ARG BUILD_ID=devel
-ARG BUILD_DATE="2024-05-01"
+ARG BASE_IMAGE_LABEL=lj020326/cicd-docker-in-docker:latest
 
 ## refs:
 ##   https://github.com/cloudbees/jnlp-slave-with-java-build-tools-dockerfile/blob/master/Dockerfile
 ##   https://github.com/cloudbees/java-build-tools-dockerfile/blob/master/Dockerfile
 ##
-FROM jenkins/inbound-agent as builder
+FROM jenkins/inbound-agent AS builder
 
-FROM $IMAGE_REGISTRY/$BASE_IMAGE_LABEL:latest
+FROM $IMAGE_REGISTRY/$BASE_IMAGE_LABEL
+
+ARG BUILD_ID=devel
+ARG BUILD_DATE="2024-05-01"
+
 LABEL maintainer="Lee Johnson <ljohnson@dettonville.org>"
 LABEL build_date=$BUILD_DATE
 LABEL build=$BUILD_ID
@@ -24,9 +26,6 @@ LABEL build=$BUILD_ID
 # https://medium.com/@prashant.vats/jenkins-master-and-slave-with-docker-b993dd031cbd
 #################################################
 
-COPY --from=builder /usr/local/bin/jenkins-slave /usr/local/bin/jenkins-agent
-COPY --from=builder /usr/share/jenkins/agent.jar /usr/share/jenkins/agent.jar
-
 USER root
 
 ## ref: https://issues.jenkins-ci.org/browse/JENKINS-60343
@@ -35,6 +34,9 @@ ARG group=${user}
 ARG uid=1000
 ARG gid=${uid}
 ENV HOME=/home/${user}
+
+COPY --from=builder /usr/local/bin/jenkins-slave /usr/local/bin/jenkins-agent
+COPY --from=builder /usr/share/jenkins/agent.jar /usr/share/jenkins/agent.jar
 
 RUN chmod +x /usr/local/bin/jenkins-agent &&\
     ln -s /usr/local/bin/jenkins-agent /usr/local/bin/jenkins-slave

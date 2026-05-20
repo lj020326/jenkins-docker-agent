@@ -1,18 +1,21 @@
 ## ref: https://schneide.blog/2019/10/21/using-parameterized-docker-builds/
 ARG IMAGE_REGISTRY=docker.io
-ARG BASE_IMAGE_LABEL=lj020326/cicd-build-tools
-FROM $IMAGE_REGISTRY/$BASE_IMAGE_LABEL
-ARG BUILD_ID=devel
-ARG BUILD_DATE="2024-05-01"
+ARG BASE_IMAGE_LABEL=lj020326/cicd-build-tools:latest
 
 ## refs:
 ##   https://github.com/cloudbees/jnlp-slave-with-java-build-tools-dockerfile/blob/master/Dockerfile
 ##   https://github.com/cloudbees/java-build-tools-dockerfile/blob/master/Dockerfile
 ##
-#FROM jenkins/inbound-agent as builder
-FROM jenkins/agent as builder
+#FROM jenkins/inbound-agent AS builder
+FROM jenkins/agent AS builder
 
-FROM $IMAGE_REGISTRY/$BASE_IMAGE_LABEL:latest
+ARG IMAGE_REGISTRY=docker.io
+ARG BASE_IMAGE_LABEL=lj020326/cicd-build-tools:latest
+FROM $IMAGE_REGISTRY/$BASE_IMAGE_LABEL
+
+ARG BUILD_ID=devel
+ARG BUILD_DATE="2024-05-01"
+
 LABEL maintainer="Lee Johnson <ljohnson@dettonville.org>"
 LABEL build_date=$BUILD_DATE
 LABEL build=$BUILD_ID
