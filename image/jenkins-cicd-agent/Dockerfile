@@ -6,12 +6,17 @@ ARG BASE_IMAGE_LABEL=lj020326/cicd-build-tools:latest
 ##   https://github.com/cloudbees/jnlp-slave-with-java-build-tools-dockerfile/blob/master/Dockerfile
 ##   https://github.com/cloudbees/java-build-tools-dockerfile/blob/master/Dockerfile
 ##
-#FROM jenkins/inbound-agent AS builder
-FROM jenkins/agent AS builder
+# Default to a specific tag instead of latest if someone runs it manually
+ARG AGENT_VERSION=latest
+#ARG AGENT_VERSION=3283.v5332f144410a-1-jdk21
+#ARG AGENT_VERSION=3283.v5332f144410a-1-jdk21-debian
+
+#FROM jenkins/inbound-agent:${AGENT_VERSION} AS builder
+FROM jenkins/agent:${AGENT_VERSION} AS builder
 
 ARG IMAGE_REGISTRY=docker.io
 ARG BASE_IMAGE_LABEL=lj020326/cicd-build-tools:latest
-FROM $IMAGE_REGISTRY/$BASE_IMAGE_LABEL
+FROM ${IMAGE_REGISTRY}/${BASE_IMAGE_LABEL}
 
 ARG BUILD_ID=devel
 ARG BUILD_DATE="2024-05-01"

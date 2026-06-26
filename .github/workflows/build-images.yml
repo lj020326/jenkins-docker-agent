@@ -39,6 +39,8 @@ jobs:
   build_base_images:
     name: Build Base Images
     needs: parse_config
+    # Only run if there's at least one base image defined
+    if: ${{ needs.parse_config.outputs.base_images != '' && needs.parse_config.outputs.base_images != '[]' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
@@ -61,6 +63,8 @@ jobs:
   build_dependent_images:
     name: Build Dependent Images
     needs: [parse_config, build_base_images]
+    # Ensures the job is skipped completely if no dependent images exist, avoiding matrix initialization errors
+    if: ${{ always() && (needs.build_base_images.result == 'success' || needs.build_base_images.result == 'skipped') && needs.parse_config.outputs.dependent_images != '' && needs.parse_config.outputs.dependent_images != '[]' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

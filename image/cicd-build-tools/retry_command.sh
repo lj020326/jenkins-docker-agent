@@ -3,7 +3,7 @@
 # retry_command.sh: A script to retry a given command multiple times.
 
 # Configuration
-MAX_RETRIES=${RETRY_MAX_ATTEMPTS:-5}  # Max number of attempts, default to 5
+MAX_RETRIES=${RETRY_MAX_ATTEMPTS:-3}  # Max number of attempts, default to 5
 RETRY_DELAY=${RETRY_SLEEP_SECONDS:-10} # Delay between retries in seconds, default to 10
 
 # Check if a command was provided using the argument count
@@ -13,7 +13,7 @@ if [ "$#" -eq 0 ]; then
   exit 1
 fi
 
-COMMAND_TO_RUN="$@"
+COMMAND_TO_RUN="${*}"
 CURRENT_RETRY=0
 
 echo "Starting retry wrapper for: '$COMMAND_TO_RUN'"
