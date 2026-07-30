@@ -7,6 +7,7 @@ ARG user=jenkins
 ARG group=jenkins
 
 USER root
+ENV HOME=/home/${user}
 
 #==========
 # PIP - Install Python dependencies
@@ -17,7 +18,7 @@ ENV PIP_ROOT_USER_ACTION=ignore
 COPY requirements.txt .
 RUN pip install --disable-pip-version-check --no-cache-dir -r requirements.txt
 
-ARG WORKDIR=/home/${user}
+ARG WORKDIR=${HOME}
 ARG JENKINS_AGENT_WORKDIR="${WORKDIR}"/agent
 
 # drop back to the regular jenkins user - good practice

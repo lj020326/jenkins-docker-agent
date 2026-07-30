@@ -123,4 +123,5 @@ docker build -t wiki-pipeline:latest -f image/wiki-pipeline/Dockerfile image/wik
 ## 🛡️ Identity & Maintainer
 * **Maintainer:** Lee Johnson
 * **Contact:** <ljohnson@dettonville.org>
+* **LinkedIn:** https://www.linkedin.com/in/leejjohnson/
 * **System Framework:** [Dettonville Cloud Infrastructure Services](https://dettonville.org)

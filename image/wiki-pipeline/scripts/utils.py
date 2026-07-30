@@ -1,18 +1,17 @@
 # scripts/utils.py
 import fnmatch
+import frontmatter
 import hashlib
 import json
+import litellm
 import logging
 import os
 import pathspec
 import pprint
 import subprocess
 import sys
-from pathlib import Path
-
-import frontmatter
-import litellm
 import yaml
+from pathlib import Path
 
 # Module-level cache for configuration (loaded once per process)
 _config_cache = None
@@ -173,39 +172,67 @@ class LLMClient:
         return load_config(config_path)
 
     def _initialize_litellm(self, cfg, debug_override=False):
-        """Perform one-time SDK setup """
+        """Perform one-time SDK setup"""
         litellm.skip_model_info_query = cfg.get("skip_model_info_query", True)
         litellm.use_local_model_cost_map = cfg.get("use_local_model_cost_map", True)
         litellm.suppress_helper_warnings = cfg.get("suppress_helper_warnings", True)
 
         turn_on_debug = debug_override or cfg.get("debug_llm", False)
-        # log.debug(f"debug_override={debug_override}")
-        # log.debug(f"cfg.get('debug_llm', False)={cfg.get('debug_llm', False)}")
-        # log.debug(f"turn_on_debug={turn_on_debug}")
 
         if turn_on_debug:
-            log.debug(f"turning on litellm debug")
+            log.debug("turning on litellm debug")
             litellm._turn_on_debug()
 
+        # Set API base URL
         litellm.api_base = self.api_base
 
+        # Resolve API Key from cfg -> env vars -> fallback for local backends
+        api_key = (
+            cfg.get("api_key")
+            or os.getenv("LLM_API_KEY")
+            or os.getenv("OPENAI_API_KEY")
+            or os.getenv("LITELLM_API_KEY")
+            or "nokey"  # Default fallback placeholder for local Ollama/vLLM endpoints
+        )
+
+        litellm.api_key = api_key
+        # Also ensure OpenAI SDK compatibility when provider is set to openai
+        os.environ["OPENAI_API_KEY"] = api_key
+
+        # Flexible local cost map supporting both GPU host endpoints
         model_cost_map_default = {
             "qwen2.5-coder:32b": {
                 "max_tokens": 32768,
                 "input_cost_per_token": 0,
                 "output_cost_per_token": 0,
                 "lite_llm_model_name": "qwen2.5-coder:32b",
-                "model_name": "qwen2.5-coder:32b"
-            }
+                "model_name": "qwen2.5-coder:32b",
+            },
+            "qwen3-coder-next:q4_K_M": {
+                "max_tokens": 32768,
+                "input_cost_per_token": 0,
+                "output_cost_per_token": 0,
+                "lite_llm_model_name": "qwen3-coder-next:q4_K_M",
+                "model_name": "qwen3-coder-next:q4_K_M",
+            },
         }
-        model_cost_map = cfg.get("model_cost_map", model_cost_map_default)
-        # If using custom models, it's often best to provide a dummy map to stop the search
-        # litellm.model_cost_map = model_cost_map
-        litellm.register_model(model_cost_map)
+
+        # Merge user config map into defaults if present
+        model_cost_map = model_cost_map_default.copy()
+        user_cost_map = cfg.get("model_cost_map", {})
+        if user_cost_map:
+            model_cost_map.update(user_cost_map)
 
         # Register custom model if provider prefix is missing
         if self.provider and not self.model.startswith(f"{self.provider}/"):
-            self.model = f"{self.provider}/{self.model}"
+            # Ensure prefixed model variant is also in LiteLLM cost map
+            prefixed_model = f"{self.provider}/{self.model}"
+            if self.model in model_cost_map and prefixed_model not in model_cost_map:
+                model_cost_map[prefixed_model] = model_cost_map[self.model].copy()
+                model_cost_map[prefixed_model]["model_name"] = prefixed_model
+            self.model = prefixed_model
+
+        litellm.register_model(model_cost_map)
 
     def get_response(self, prompt, **kwargs):
         """Refactored class method for LLM calls """

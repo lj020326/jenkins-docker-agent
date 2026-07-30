@@ -4,15 +4,10 @@ ARG IMAGE_REGISTRY=docker.io
 ARG BASE_IMAGE_LABEL=lj020326/cicd-build-tools:latest
 FROM $IMAGE_REGISTRY/$BASE_IMAGE_LABEL
 
-USER root
+ARG user=jenkins
+ARG group=jenkins
 
-# 1. Install specific Python needs for the wiki-pipeline
-RUN apt-get update -qqy && \
-    apt-get -qqy --no-install-recommends install \
-      python3-pip \
-      python3-venv \
-      graphviz && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+USER root
 
 # 2. Setup Application
 WORKDIR /app
@@ -36,5 +31,8 @@ RUN printf '#!/bin/bash\nexec python3 -u /app/scripts/cli.py "$@"\n' > /usr/loca
 
 ENV PYTHONPATH=/app
 ENV PATH="/app/scripts:${PATH}"
+
+# drop back to the regular jenkins user - good practice
+USER ${user}
 
 CMD ["--help"]
