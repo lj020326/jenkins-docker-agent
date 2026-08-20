@@ -1,3 +1,7 @@
+ansible-core
+#ansible-lint
+ansible-lint-junit
+ansible-lint==25.12.2
 awscli
 awxkit
 cryptography
@@ -34,6 +38,7 @@ requests-credssp
 ruamel.yaml
 selenium
 setuptools
+truststore
 yaml-lint-to-junit-xml
 yamllint
 ## yq installed from binary

@@ -13,6 +13,9 @@ import sys
 import yaml
 from pathlib import Path
 
+from litellm.litellm_core_utils.streaming_handler import CustomStreamWrapper
+from litellm.types.utils import ModelResponse
+
 # Module-level cache for configuration (loaded once per process)
 _config_cache = None
 # Define TRACE level (lower than DEBUG)
@@ -68,13 +71,13 @@ def setup_logging(verbose_level: int, debug_llm: bool = False):
     else:
         level = logging.INFO
 
-    log.debug(f"debug_llm={debug_llm}")
-
     # 3. Configure the 'scripts' parent logger
     # Every file that starts with 'from .utils import log' or
     # 'logging.getLogger(__name__)' will now inherit this level.
     pipeline_logger = logging.getLogger("scripts")
     pipeline_logger.setLevel(level)
+
+    log.debug(f"debug_llm={debug_llm}")
 
     # List of noisy external loggers to control
     llm_loggers = ["litellm", "openai", "httpcore", "httpx"]
@@ -86,6 +89,7 @@ def setup_logging(verbose_level: int, debug_llm: bool = False):
             external_logger.setLevel(logging.DEBUG)
             external_logger.propagate = True
         else:
+            # noinspection PyUnresolvedReferences
             log.trace(f"logger({logger_name}).setLevel=logging.WARNING")
             external_logger.setLevel(logging.WARNING)
             # Prevent these from sending their debug logs up to your DEBUG root logger
@@ -100,6 +104,7 @@ def setup_logging(verbose_level: int, debug_llm: bool = False):
 
 def get_default_config():
     """Internal defaults if .wiki-config.yml is missing"""
+    # noinspection PyUnresolvedReferences
     log.trace("getting default configs")
     return {
         "wiki": {
@@ -145,6 +150,34 @@ def get_default_config():
     }
 
 
+def load_config(config_path: str = ".wiki-config.yml", force_reload: bool = False):
+    """Load config with module-level caching"""
+    global _config_cache
+
+    if _config_cache is not None and not force_reload:
+        return _config_cache
+
+    wiki_config = get_default_config()
+
+    log.debug(f"config_path={config_path}")
+    path = Path(config_path)
+    if not path.exists():
+        log.warning(f"{config_path} not found. Using internal defaults.")
+
+    if os.path.exists(config_path):
+        with open(path, encoding="utf-8") as f:
+            user_config = yaml.safe_load(f) or {}
+            # Deep merge user_config into defaults
+            # (Ensuring 'wiki' sub-keys are handled)
+            wiki_config["wiki"].update(user_config.get("wiki"))
+
+    _config_cache = wiki_config
+    # noinspection PyUnresolvedReferences
+    log.trace("_config_cache=\n" + pprint.pformat(_config_cache))
+
+    return _config_cache
+
+
 class LLMClient:
     def __init__(self, config_path=".wiki-config.yml", overrides=None):
         # 1. Load configuration once
@@ -154,9 +187,23 @@ class LLMClient:
 
         # 2. Set core connection parameters
         self.model = overrides.get("model") or llm_cfg.get("model")
-        self.api_base = overrides.get("api_base") or llm_cfg.get("api_base")
-        self.api_key = overrides.get("api_key") or llm_cfg.get("api_key", "dummy-key")
         self.provider = overrides.get("provider") or llm_cfg.get("provider", "openai")
+        self.api_base = overrides.get("api_base") or llm_cfg.get("api_base")
+
+        # Capture auth_type configuration (supports "basic" or standard/bearer)
+        self.auth_type = (
+            overrides.get("auth_type") or llm_cfg.get("auth_type") or "bearer"
+        ).lower()
+
+        # Resolve API Key from cfg -> env vars -> fallback for local backends
+        self.api_key = (
+            overrides.get("api_key")
+            or llm_cfg.get("api_key")
+            or os.getenv("LLM_API_KEY")
+            or os.getenv("OPENAI_API_KEY")
+            or os.getenv("LITELLM_API_KEY")
+            or ""  # Default fallback placeholder for local Ollama/vLLM endpoints
+        )
 
         # 3. Apply LiteLLM SDK initializations
         self._initialize_litellm(llm_cfg, overrides.get("debug_llm", False))
@@ -184,36 +231,52 @@ class LLMClient:
             litellm._turn_on_debug()
 
         # Set API base URL
+        log.info(f"api_base={self.api_base}")
         litellm.api_base = self.api_base
 
-        # Resolve API Key from cfg -> env vars -> fallback for local backends
-        api_key = (
-            cfg.get("api_key")
-            or os.getenv("LLM_API_KEY")
-            or os.getenv("OPENAI_API_KEY")
-            or os.getenv("LITELLM_API_KEY")
-            or "nokey"  # Default fallback placeholder for local Ollama/vLLM endpoints
-        )
+        # Assign unified api_key to LiteLLM and environment
+        log.debug(f"api_key={self.api_key}")
+        litellm.api_key = self.api_key
 
-        litellm.api_key = api_key
-        # Also ensure OpenAI SDK compatibility when provider is set to openai
-        os.environ["OPENAI_API_KEY"] = api_key
+        # # Also ensure OpenAI SDK compatibility when provider is set to openai
+        # os.environ["OPENAI_API_KEY"] = self.api_key
 
         # Flexible local cost map supporting both GPU host endpoints
         model_cost_map_default = {
-            "qwen2.5-coder:32b": {
-                "max_tokens": 32768,
+            "devstral:24b": {
+                "max_tokens": 16384,
+                "cache_creation_input_token_cost": 0,
+                "cache_read_input_token_cost": 0,
                 "input_cost_per_token": 0,
                 "output_cost_per_token": 0,
-                "lite_llm_model_name": "qwen2.5-coder:32b",
-                "model_name": "qwen2.5-coder:32b",
             },
-            "qwen3-coder-next:q4_K_M": {
-                "max_tokens": 32768,
+            "deepseek-r1:14b": {
+                "max_tokens": 16384,
+                "cache_creation_input_token_cost": 0,
+                "cache_read_input_token_cost": 0,
                 "input_cost_per_token": 0,
                 "output_cost_per_token": 0,
-                "lite_llm_model_name": "qwen3-coder-next:q4_K_M",
-                "model_name": "qwen3-coder-next:q4_K_M",
+            },
+            "qwen3.5:27b": {
+                "max_tokens": 16384,
+                "cache_creation_input_token_cost": 0,
+                "cache_read_input_token_cost": 0,
+                "input_cost_per_token": 0,
+                "output_cost_per_token": 0,
+            },
+            "qwen2.5-coder:7b": {
+                "max_tokens": 16384,
+                "cache_creation_input_token_cost": 0,
+                "cache_read_input_token_cost": 0,
+                "input_cost_per_token": 0,
+                "output_cost_per_token": 0,
+            },
+            "llama3.1:8b": {
+                "max_tokens": 8192,
+                "cache_creation_input_token_cost": 0,
+                "cache_read_input_token_cost": 0,
+                "input_cost_per_token": 0,
+                "output_cost_per_token": 0,
             },
         }
 
@@ -237,45 +300,26 @@ class LLMClient:
     def get_response(self, prompt, **kwargs):
         """Refactored class method for LLM calls """
         params = {**self.default_params, **kwargs}
+        extra_headers = kwargs.pop("extra_headers", {})
+
+        # Only inject the Basic auth header override if auth_type is explicitly set to "basic"
+        if self.auth_type == "basic" and self.api_key:
+            extra_headers["Authorization"] = f"Basic {self.api_key}"
+
         try:
             response = litellm.completion(
                 model=self.model,
                 messages=[{"role": "user", "content": prompt}],
-                api_key=self.api_key,
-                **params
+                # clear bearer key injection if using explicit basic header
+                api_key=self.api_key if self.auth_type != "basic" else None,
+                extra_headers=extra_headers if extra_headers else None,
+                **params,
             )
             return response.choices[0].message.content.strip()
         except Exception as e:
             # Log it if you want, but re-raise so the caller knows it failed
             logging.error(f"LLM Error: {type(e).__name__}: {e}")
             raise
-
-
-def load_config(config_path: str = ".wiki-config.yml", force_reload: bool = False):
-    """Load config with module-level caching"""
-    global _config_cache
-
-    if _config_cache is not None and not force_reload:
-        return _config_cache
-
-    wiki_config = get_default_config()
-
-    log.debug(f"config_path={config_path}")
-    path = Path(config_path)
-    if not path.exists():
-        log.warning(f"{config_path} not found. Using internal defaults.")
-
-    if os.path.exists(config_path):
-        with open(path, encoding="utf-8") as f:
-            user_config = yaml.safe_load(f) or {}
-            # Deep merge user_config into defaults
-            # (Ensuring 'wiki' sub-keys are handled)
-            wiki_config["wiki"].update(user_config.get("wiki"))
-
-    _config_cache = wiki_config
-    log.trace("_config_cache=\n" + pprint.pformat(_config_cache))
-
-    return _config_cache
 
 
 def get_role_fingerprint(role_path):

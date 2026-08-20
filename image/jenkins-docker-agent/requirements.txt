@@ -2,16 +2,21 @@ ansible-core
 #ansible-lint
 ansible-lint-junit
 ansible-lint==25.12.2
+awscli
+awxkit
 cryptography
 defusedxml
+distlib
 dnspython
 docker
 edgegrid-python
 huggingface_hub[cli,hf_transfer]
 hvac
+jinja2
 jmespath
 kubernetes
 netaddr
+packaging
 passlib
 py
 pyVim
@@ -31,6 +36,9 @@ pyyaml
 requests
 requests-credssp
 ruamel.yaml
+selenium
+setuptools
+truststore
 yaml-lint-to-junit-xml
 yamllint
 

@@ -65,6 +65,8 @@ ARG uid=1001
 ARG gid=1001
 ARG DOCKER_GID=1102
 
+USER root
+
 # Setup Docker Group, Jenkins User, and APT Configuration
 RUN groupadd -g ${DOCKER_GID} docker && \
     groupadd -g ${gid} ${group} && \
@@ -126,26 +128,53 @@ RUN pip install --no-cache-dir -r requirements.txt && \
     pip install --no-cache-dir --no-deps /tmp/sdk-build/* && \
     rm -rf /tmp/sdk-build requirements.txt
 
-# Configure Multiarch Contexts
-RUN for user_home in /root /home/${user}; do \
-        mkdir -p ${user_home}/.ssh && \
-        mkdir -p ${user_home}/.docker/buildx/instances && \
-        echo '{"name":"multiarch-builder","driver":"docker-container","nodes":[{"name":"multiarch-builder0","endpoint":"unix:///var/run/docker.sock","platforms":null,"flags":[],"env":null,"driver-opts":null}]}' \
-        > ${user_home}/.docker/buildx/instances/multiarch-builder && \
-        mkdir -p ${user_home}/.docker && \
-        echo '{"currentContext":"default"}' \
-        > ${user_home}/.docker/config.json && \
-        mkdir -p ${user_home}/.ansible/collections && \
-        chown -R ${user}:${user} ${user_home}/.docker ${user_home}/.ansible || true; \
-    done
+# =============================================================================
+# Runtime user / HOME
+# =============================================================================
+#
+# IMPORTANT – do NOT switch to USER jenkins (or any non-root user) at the end
+# of this image.
+#
+# The Jenkins Docker Pipeline plugin always starts agent containers with:
+#   docker run ... -u 0:0 ...
+#
+# When the image itself ends with `USER jenkins` + `ENV HOME=/home/jenkins`,
+# two different home directories appear at runtime:
+#   - $HOME          → /home/jenkins   (from the ENV)
+#   - getpwuid(0)    → /root           (because the process is actually root)
+#
+# Ansible’s async wrapper is sensitive to this mismatch.  The job file is
+# written under /home/jenkins/.ansible_async/… while async_status later
+# looks under /root/.ansible_async/… and fails with “could not find job”.
+#
+# Keeping the image as root (HOME=/root) makes the two paths identical and
+# eliminates the class of bugs.  The same root cause also affected SSH
+# known_hosts / key-scan behaviour in downstream images that extended this one.
+#
+# The jenkins user is still created so the image can be run manually as
+# non-root if desired, but the default (and the only supported mode under
+# the Docker Pipeline plugin) is root.
+#
+# =============================================================================
+ENV HOME=/root
+WORKDIR "${HOME}"
 
-ENV HOME=/home/${user}
-WORKDIR ${HOME}
-USER ${user}
+# Ensure the directories Ansible (and other tools) expect exist
+RUN mkdir -p ${HOME}/.ansible_async \
+             ${HOME}/.ansible/collections \
+             ${HOME}/.ssh \
+             ${HOME}/.docker/buildx/instances && \
+    # optional: still keep a jenkins home in case someone runs without -u 0:0
+    mkdir -p /home/${user}/.ansible_async \
+             /home/${user}/.ansible/collections \
+             /home/${user}/.ssh \
+             /home/${user}/.docker/buildx/instances && \
+    chown -R ${user}:${group} /home/${user}
 
-COPY --chown=${user}:${user} requirements.yml .
+COPY requirements.yml .
 RUN /usr/local/bin/retry_command.sh ansible-galaxy collection install -r requirements.yml && \
     rm -f requirements.yml
 
+USER root
 # Fallback default command
 CMD ["/bin/bash"]

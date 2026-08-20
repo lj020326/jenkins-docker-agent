@@ -7,24 +7,21 @@ ARG user=jenkins
 ARG group=jenkins
 
 USER root
-ENV HOME=/home/${user}
+#ENV HOME=/home/${user}
+ENV HOME=/root
 
 #==========
 # PIP - Install Python dependencies
 #==========
-## ref: https://github.com/pypa/pip/issues/11179#issuecomment-1152766374
-ENV PIP_ROOT_USER_ACTION=ignore
-
 COPY requirements.txt .
 RUN pip install --disable-pip-version-check --no-cache-dir -r requirements.txt
 
-ARG WORKDIR=${HOME}
-ARG JENKINS_AGENT_WORKDIR="${WORKDIR}"/agent
+ARG JENKINS_AGENT_WORKDIR="${HOME}/agent"
 
-# drop back to the regular jenkins user - good practice
-USER ${user}
+## drop back to the regular jenkins user - good practice
+#USER ${user}
 
 ## Create a working directory for jenkins project files
 #WORKDIR /jenkins_project
 # Create a working directory for Ansible project files
-WORKDIR ${WORKDIR}
+WORKDIR ${HOME}

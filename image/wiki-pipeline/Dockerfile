@@ -4,9 +4,6 @@ ARG IMAGE_REGISTRY=docker.io
 ARG BASE_IMAGE_LABEL=lj020326/cicd-build-tools:latest
 FROM $IMAGE_REGISTRY/$BASE_IMAGE_LABEL
 
-ARG user=jenkins
-ARG group=jenkins
-
 USER root
 
 # 2. Setup Application
@@ -31,8 +28,5 @@ RUN printf '#!/bin/bash\nexec python3 -u /app/scripts/cli.py "$@"\n' > /usr/loca
 
 ENV PYTHONPATH=/app
 ENV PATH="/app/scripts:${PATH}"
-
-# drop back to the regular jenkins user - good practice
-USER ${user}
 
 CMD ["--help"]
