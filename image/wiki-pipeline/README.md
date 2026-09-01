@@ -122,8 +122,8 @@ wiki-pipeline index --verbose
 
 See [`.jenkins/runWikiPipeline.groovy`](https://github.com/lj020326/pipeline-automation-lib/blob/main/vars/runWikiPipeline.groovy) for the full CI/CD pipeline that:
 
-- Runs inside the Docker container 
-- Uses --changed-only for speed 
+- Runs inside the Docker container
+- Uses --changed-only for speed
 - Commits changes with [skip ci]
 - Respects internal LLM endpoint
 
@@ -135,9 +135,9 @@ lj020326/wiki-pipeline:latest
 
 Built with:
 
-- Python 3.12-slim 
-- LiteLLM + Ollama support 
-- Git, graphviz, ssh-agent 
+- Python 3.12-slim
+- LiteLLM + Ollama support
+- Git, graphviz, ssh-agent
 - All scripts included
 
 ## Example .wiki-config

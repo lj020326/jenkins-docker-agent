@@ -32,10 +32,7 @@ def embed_media_links(wiki_dir: Path, media_dir: Path):
         f.write("\n".join(media_links))
 
 
-def generate_media(
-    llm_client: LLMClient,
-    config_path: str = ".wiki-config.yml"
-):
+def generate_media(llm_client: LLMClient, config_path: str = ".wiki-config.yml"):
     config = load_config(config_path)
     wiki_config = config.get("wiki", {})
 
@@ -56,6 +53,7 @@ def generate_media(
     # Logic to generate artifacts (Matplotlib/Marp) goes here
     chart_path = media_dir / "charts" / "infrastructure_overview.png"
     # (Example: plt.savefig(chart_path))
+    log.debug(f"Chart target location: {chart_path}")
 
     log.debug(f"✅ Outputs generated in {media_dir}")
 
@@ -80,11 +78,8 @@ if __name__ == "__main__":
             "model": args.model,
             "api_base": args.api_base,
             "provider": args.provider,
-            "debug_llm": args.debug_llm
-        }
+            "debug_llm": args.debug_llm,
+        },
     )
 
-    generate_media(
-        llm_client,
-        config_path=args.config
-    )
+    generate_media(llm_client, config_path=args.config)

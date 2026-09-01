@@ -13,8 +13,6 @@ import sys
 import yaml
 from pathlib import Path
 
-from litellm.litellm_core_utils.streaming_handler import CustomStreamWrapper
-from litellm.types.utils import ModelResponse
 
 # Module-level cache for configuration (loaded once per process)
 _config_cache = None
@@ -49,10 +47,8 @@ def setup_logging(verbose_level: int, debug_llm: bool = False):
     # Configure the root logger
     logging.basicConfig(
         level=logging.WARNING,
-        format='[%(levelname)s] %(name)s: %(message)s',
-        handlers=[
-            logging.StreamHandler(sys.stdout)
-        ]
+        format="[%(levelname)s] %(name)s: %(message)s",
+        handlers=[logging.StreamHandler(sys.stdout)],
     )
     # logging.basicConfig(
     #     level=logging.WARNING,
@@ -115,11 +111,16 @@ def get_default_config():
                 "**/docs/**/*.md",
                 "**/playbooks/**/*.md",
                 "**/roles/**/*.md",
-                "**/vars/**/*.md"
+                "**/vars/**/*.md",
             ],
             "harvest_ignore": [
-                ".continue/", "archive/", "inventory/",
-                "molecule/", "plugins/", "save/", "tests/"
+                ".continue/",
+                "archive/",
+                "inventory/",
+                "molecule/",
+                "plugins/",
+                "save/",
+                "tests/",
             ],
             "title": "Ansible Datacenter Wiki",
             "llm": {
@@ -129,23 +130,23 @@ def get_default_config():
                 "provider": "openai",
                 "temperature": 0.25,
                 "max_tokens": 4096,
-                "timeout": 1200
+                "timeout": 1200,
             },
             "role_prompt": {
                 "prefix": "You are an expert Ansible architect and excellent technical writer.\nCreate a comprehensive, high-quality, professional documentation page.",
-                "suffix": "Important notes:\n- Double-underscore variables are internal only.\n- Do not invent Related Roles.\n- Use only standard GitHub Markdown."
+                "suffix": "Important notes:\n- Double-underscore variables are internal only.\n- Do not invent Related Roles.\n- Use only standard GitHub Markdown.",
             },
             "compile_prompt": {
                 "prefix": "You are an expert technical writer.\nImprove and standardize this documentation page for GitHub rendering.",
-                "suffix": "Keep all original information. Add proper YAML frontmatter, categories, and a Backlinks section if missing.\nOutput only the improved Markdown."
+                "suffix": "Keep all original information. Add proper YAML frontmatter, categories, and a Backlinks section if missing.\nOutput only the improved Markdown.",
             },
             "lint_prompt": {
                 "prefix": "You are a strict technical documentation reviewer.\nAnalyze this documentation page for issues.",
-                "suffix": "Return findings in this exact format:\n### {filename}\n**Issues:**\n- issue 1\n**Suggestions:**\n- suggestion 1"
+                "suffix": "Return findings in this exact format:\n### {filename}\n**Issues:**\n- issue 1\n**Suggestions:**\n- suggestion 1",
             },
             "qa_prompt": "You are a helpful technical support engineer.\nGenerate 8-12 important Q&A pairs based on the wiki content.",
             "roles_ignore": [],
-            "priority_roles": []
+            "priority_roles": [],
         }
     }
 
@@ -212,7 +213,7 @@ class LLMClient:
         self.default_params = {
             "temperature": llm_cfg.get("temperature", 0.25),
             "max_tokens": llm_cfg.get("max_tokens", 4096),
-            "timeout": llm_cfg.get("timeout", 900)
+            "timeout": llm_cfg.get("timeout", 900),
         }
 
     def _load_config(self, config_path):
@@ -298,7 +299,7 @@ class LLMClient:
         litellm.register_model(model_cost_map)
 
     def get_response(self, prompt, **kwargs):
-        """Refactored class method for LLM calls """
+        """Refactored class method for LLM calls"""
         params = {**self.default_params, **kwargs}
         extra_headers = kwargs.pop("extra_headers", {})
 
@@ -331,8 +332,11 @@ def get_role_fingerprint(role_path):
         p = role_path / file_name
         if p.exists():
             # Use the compaction logic here: strip comments/whitespace
-            lines = [l.strip() for l in p.read_text().splitlines()
-                     if l.strip() and not l.strip().startswith("#")]
+            lines = [
+                line.strip()
+                for line in p.read_text().splitlines()
+                if line.strip() and not line.strip().startswith("#")
+            ]
             combined_content += "".join(lines)
 
     return hashlib.md5(combined_content.encode()).hexdigest()
@@ -374,7 +378,7 @@ def get_effective_paths(wiki_config: dict):
         "wiki_dir": Path(wiki_config.get("wiki_dir", "wiki")),
         "state_dir": state_dir,
         "raw_dir": state_dir / "raw",
-        "state_file": state_dir / ".wiki-state.json"
+        "state_file": state_dir / ".wiki-state.json",
     }
 
 
@@ -432,7 +436,7 @@ def is_ignored(path, ignore_patterns, spec=None):
             return True
     else:
         # Fallback for single-use calls
-        temp_spec = pathspec.PathSpec.from_lines('gitwildmatch', ignore_patterns)
+        temp_spec = pathspec.PathSpec.from_lines("gitwildmatch", ignore_patterns)
         if temp_spec.match_file(path_str):
             return True
 
@@ -454,7 +458,7 @@ def is_ignored_by_git(path: Path, repo_root: Path) -> bool:
             ["git", "check-ignore", "-q", str(path.relative_to(repo_root))],
             cwd=repo_root,
             stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
+            stderr=subprocess.DEVNULL,
         )
         return result.returncode == 0
     except Exception:

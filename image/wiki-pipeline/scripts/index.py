@@ -16,10 +16,7 @@ from .utils import ensure_dir, load_config, setup_logging, get_effective_paths
 log = logging.getLogger(__name__)
 
 
-def generate_wiki_index(
-        repo_root: Path,
-        config_path: str = ".wiki-config.yml"
-):
+def generate_wiki_index(repo_root: Path, config_path: str = ".wiki-config.yml"):
     # 1. Setup paths and config using the standardized utility
     config = load_config(config_path)
     wiki_config = config.get("wiki", {})
@@ -80,13 +77,20 @@ def generate_wiki_index(
             continue
 
         # Get category title from config or format the slug
-        title = wiki_config.get("default_category_title", "Other Roles") if cat_name == default_cat else \
-            wiki_config.get("categories", {}).get(cat_name, {}).get("title", cat_name.replace('_', ' ').title())
+        title = (
+            wiki_config.get("default_category_title", "Other Roles")
+            if cat_name == default_cat
+            else wiki_config.get("categories", {})
+            .get(cat_name, {})
+            .get("title", cat_name.replace("_", " ").title())
+        )
 
         index_content += f"### {title}\n"
 
         # Add category description if available
-        cat_desc = wiki_config.get("categories", {}).get(cat_name, {}).get("description", "")
+        cat_desc = (
+            wiki_config.get("categories", {}).get(cat_name, {}).get("description", "")
+        )
         if cat_desc:
             index_content += f"*{cat_desc}*\n\n"
         else:
@@ -102,7 +106,9 @@ def generate_wiki_index(
     (wiki_dir / "README.md").write_text(index_content, encoding="utf-8")
     (wiki_dir / "index.md").write_text(index_content, encoding="utf-8")
 
-    log.info(f"✅ Generated convergence index at {wiki_dir}/README.md with {len(active_role_names)} roles")
+    log.info(
+        f"✅ Generated convergence index at {wiki_dir}/README.md with {len(active_role_names)} roles"
+    )
 
 
 if __name__ == "__main__":
@@ -114,7 +120,4 @@ if __name__ == "__main__":
     # Initialize the global logging config once
     setup_logging(args.verbose)
 
-    generate_wiki_index(
-        Path("."),
-        config_path=args.config
-    )
+    generate_wiki_index(Path("."), config_path=args.config)

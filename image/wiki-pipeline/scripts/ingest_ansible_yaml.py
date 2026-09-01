@@ -21,7 +21,7 @@ from .utils import (
     load_state,
     save_state,
     setup_logging,
-    LLMClient
+    LLMClient,
 )
 
 # Create a module-level logger
@@ -38,10 +38,7 @@ def get_role_name(yaml_path: Path) -> str:
 
 
 def summarize_role(
-        llm_client: LLMClient,
-        role_dir: Path,
-        repo_root: Path,
-        config: dict
+    llm_client: LLMClient, role_dir: Path, repo_root: Path, config: dict
 ) -> dict:
     role_name = get_role_name(role_dir)
     rel_role_path = role_dir.relative_to(repo_root)
@@ -59,30 +56,43 @@ def summarize_role(
         sub_path = role_dir / subdir
         if not sub_path.exists():
             continue
-        for yml_file in sorted(sub_path.rglob("*.yml")) + sorted(sub_path.rglob("*.yaml")):
+        for yml_file in sorted(sub_path.rglob("*.yml")) + sorted(
+            sub_path.rglob("*.yaml")
+        ):
             try:
                 # content = yml_file.read_text(encoding="utf-8")
-                lines = [l for l in yml_file.read_text().splitlines()
-                         if l.strip() and not l.strip().startswith("#")]
+                lines = [
+                    line
+                    for line in yml_file.read_text().splitlines()
+                    if line.strip() and not line.strip().startswith("#")
+                ]
                 content = "\n".join(lines)
 
                 # Truncate very large files (especially tasks/main.yml)
                 if len(content) > max_file_size * 2:
-                    content = content[:max_file_size] + "\n... [truncated - large file] ..."
+                    content = (
+                        content[:max_file_size] + "\n... [truncated - large file] ..."
+                    )
                 files_content[f"{subdir}/{yml_file.name}"] = content
             except Exception:
                 pass
 
-    files_section = "\n\n".join([f"### {fname}\n```yaml\n{content}\n```"
-                               for fname, content in files_content.items()])
-
-    prompt = (
-        (role_prompt.get("prefix", "") or "") +
-        f"\nRole Path: {rel_role_path}\n\n{files_section}\n\n" +
-        (role_prompt.get("suffix", "") or "")
+    files_section = "\n\n".join(
+        [
+            f"### {fname}\n```yaml\n{content}\n```"
+            for fname, content in files_content.items()
+        ]
     )
 
-    log.info(f"   ⏭️  Generating documentation for role: {role_name} ({len(files_content)} files)")
+    prompt = (
+        (role_prompt.get("prefix", "") or "")
+        + f"\nRole Path: {rel_role_path}\n\n{files_section}\n\n"
+        + (role_prompt.get("suffix", "") or "")
+    )
+
+    log.info(
+        f"   ⏭️  Generating documentation for role: {role_name} ({len(files_content)} files)"
+    )
 
     try:
         md_content = llm_client.get_response(prompt)
@@ -105,7 +115,7 @@ tags: [ansible, role, {role_name}]
         return {
             "content": md_content,
             "target_path": target_path,
-            "role_name": role_name
+            "role_name": role_name,
         }
 
     except Exception as e:
@@ -115,11 +125,11 @@ tags: [ansible, role, {role_name}]
 
 
 def ingest_ansible_yaml(
-        llm_client: LLMClient,
-        repo_root: Path,
-        limit: int = None,
-        changed_only: bool = False,
-        config_path: str = ".wiki-config.yml"
+    llm_client: LLMClient,
+    repo_root: Path,
+    limit: int = None,
+    changed_only: bool = False,
+    config_path: str = ".wiki-config.yml",
 ):
     config = load_config(config_path)
     wiki_config = config.get("wiki", {})
@@ -141,13 +151,17 @@ def ingest_ansible_yaml(
     log.debug(f"ingest_ignore={ingest_ignore}")
 
     # Pre-compile the ignore patterns for performance
-    ignore_spec = pathspec.PathSpec.from_lines('gitwildmatch', ingest_ignore) if ingest_ignore else None
+    ignore_spec = (
+        pathspec.PathSpec.from_lines("gitwildmatch", ingest_ignore)
+        if ingest_ignore
+        else None
+    )
 
     # Discovery logic remains focused on the roles/ directory
     all_roles = sorted((repo_root / "roles").glob("*/"))
     processed = 0
 
-    log.info(f"🔍 Analyzing roles for documentation updates...")
+    log.info("🔍 Analyzing roles for documentation updates...")
 
     for role_path in all_roles:
         if limit and processed >= limit:
@@ -176,12 +190,7 @@ def ingest_ansible_yaml(
 
         try:
             # 5. Summarization logic
-            result = summarize_role(
-                llm_client,
-                role_path,
-                repo_root,
-                config
-            )
+            result = summarize_role(llm_client, role_path, repo_root, config)
 
             # 6. Polished File Writing: Use the established paths
             target_md = role_output_dir / f"{result['role_name']}.md"
@@ -224,13 +233,10 @@ if __name__ == "__main__":
             "model": args.model,
             "api_base": args.api_base,
             "provider": args.provider,
-            "debug_llm": args.debug_llm
-        }
+            "debug_llm": args.debug_llm,
+        },
     )
 
     ingest_ansible_yaml(
-        llm_client,
-        Path("."),
-        limit=args.limit,
-        changed_only=args.changed_only
+        llm_client, Path("."), limit=args.limit, changed_only=args.changed_only
     )

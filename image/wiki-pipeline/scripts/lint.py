@@ -6,19 +6,16 @@ and creates a lint report.
 """
 
 import argparse
-import json
 import logging
-from pathlib import Path
 
 from .utils import (
-    ensure_dir,
     get_content_fingerprint,
     get_effective_paths,
     load_config,
     load_state,
     save_state,
     setup_logging,
-    LLMClient
+    LLMClient,
 )
 
 # Create a module-level logger
@@ -29,7 +26,7 @@ def lint_wiki(
     llm_client: LLMClient,
     limit: int = None,
     changed_only=False,
-    config_path: str = ".wiki-config.yml"
+    config_path: str = ".wiki-config.yml",
 ):
     config = load_config(config_path)
     wiki_config = config.get("wiki", {})
@@ -82,15 +79,19 @@ def lint_wiki(
             content = content[:max_file_size] + "\n... [truncated - large file] ..."
 
         prompt = (
-            (lint_prompt.get("prefix", "") or "") +
-            f"\n\nFile: {md_file.relative_to(effective_wiki_dir.parent)}\n\nContent:\n{content}\n\n" +
-            (lint_prompt.get("suffix", "") or "")
+            (lint_prompt.get("prefix", "") or "")
+            + f"\n\nFile: {md_file.relative_to(effective_wiki_dir.parent)}\n\nContent:\n{content}\n\n"
+            + (lint_prompt.get("suffix", "") or "")
         )
 
         try:
             result = llm_client.get_response(prompt)
 
-            if "issue" in result.lower() or "missing" in result.lower() or "suggest" in result.lower():
+            if (
+                "issue" in result.lower()
+                or "missing" in result.lower()
+                or "suggest" in result.lower()
+            ):
                 issues.append(result)
 
             log.info(f"   ⏭️  Linted {md_file.name}")
@@ -105,9 +106,15 @@ def lint_wiki(
 
     save_state(state_path, state)
 
-    report = "# Wiki Lint Report\n\n" + "\n\n".join(issues) if issues else "# Wiki Lint Report\n\nNo major issues found."
+    report = (
+        "# Wiki Lint Report\n\n" + "\n\n".join(issues)
+        if issues
+        else "# Wiki Lint Report\n\nNo major issues found."
+    )
     lint_report.write_text(report, encoding="utf-8")
-    log.info(f"\n✅ Successfully linted {processed} markdown files. Lint report saved to {lint_report}")
+    log.info(
+        f"\n✅ Successfully linted {processed} markdown files. Lint report saved to {lint_report}"
+    )
 
 
 if __name__ == "__main__":
@@ -130,13 +137,13 @@ if __name__ == "__main__":
             "model": args.model,
             "api_base": args.api_base,
             "provider": args.provider,
-            "debug_llm": args.debug_llm
-        }
+            "debug_llm": args.debug_llm,
+        },
     )
 
     lint_wiki(
         llm_client,
         limit=args.limit,
         changed_only=args.changed_only,
-        config_path=args.config
+        config_path=args.config,
     )

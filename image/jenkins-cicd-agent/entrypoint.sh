@@ -5,43 +5,48 @@
 echo "jenkins user and group adjustments"
 JENKINS_UID=${uid:-1000}
 JENKINS_GID=${gid:-1000}
+JAVA_OPTS=${JAVA_OPTS:-""}
 
 echo "get current jenkins uid/gid info inside container"
 CUR_USER_GID=$(id -g jenkins || true)
 CUR_USER_UID=$(id -u jenkins || true)
 
 JENKINS_UIDGID_CHANGED=false
-if [ "$JENKINS_UID" != "$CUR_USER_UID" ]; then
+if [[ "${JENKINS_UID}" != "${CUR_USER_UID}" ]]; then
   echo "CUR_USER_UID (${CUR_USER_UID}) does't match JENKINS_UID (${JENKINS_UID}), adjusting..."
-  usermod -o -u "$JENKINS_UID" jenkins
+  usermod -o -u "${JENKINS_UID}" jenkins
   JENKINS_UIDGID_CHANGED=true
 fi
-if [ "$JENKINS_GID" != "$CUR_USER_GID" ]; then
+if [[ "${JENKINS_GID}" != "${CUR_USER_GID}" ]]; then
   echo "CUR_USER_GID (${CUR_USER_GID}) does't match JENKINS_GID (${JENKINS_GID}), adjusting..."
-  groupmod -o -g "$JENKINS_GID" jenkins
+  groupmod -o -g "${JENKINS_GID}" jenkins
   JENKINS_UIDGID_CHANGED=true
 fi
+
+# Fetch updated UID/GID into variables to prevent SC2312 command masking
+NEW_USER_UID=$(id -u jenkins || true)
+NEW_USER_GID=$(id -g jenkins || true)
 
 echo '-------------------------------------'
 echo 'jenkins GID/UID'
 echo '-------------------------------------'
-echo "User uid:    $(id -u jenkins)"
-echo "User gid:    $(id -g jenkins)"
+echo "User uid:    ${NEW_USER_UID}"
+echo "User gid:    ${NEW_USER_GID}"
 echo "uid/gid changed: ${JENKINS_UIDGID_CHANGED}"
 echo "-------------------------------------"
 
 # fix file permissions
-if [ "${JENKINS_UIDGID_CHANGED,,}" == "true" ]; then
+if [[ "${JENKINS_UIDGID_CHANGED,,}" == "true" ]]; then
   echo "updating file uid/gid ownership"
   chown -R jenkins:jenkins /home/jenkins
 fi
 
-AGENT_ARGS="${@}"
+AGENT_ARGS="${*}"
 
-echo "\$0 = $0"
-echo "\$@ = $@"
-echo "\$AGENT_ARGS = $AGENT_ARGS"
-echo "\$JAVA_OPTS = $JAVA_OPTS"
+echo "\${0} = ${0}"
+echo "\$@ = $*"
+echo "\${AGENT_ARGS} = ${AGENT_ARGS}"
+echo "\${JAVA_OPTS} = ${JAVA_OPTS}"
 
 #exec /usr/local/bin/jenkins-agent "$@"
 #exec su -c "/usr/local/bin/jenkins-agent ${@}" jenkins
@@ -51,4 +56,4 @@ echo "\$JAVA_OPTS = $JAVA_OPTS"
 ## ref: https://devops.stackexchange.com/questions/2526/interference-of-docker-cmd-with-su-works-with-su-exec-but-not-with-su
 #su -c "/usr/local/bin/jenkins-agent" jenkins -- "$@"
 #exec su -c "/usr/local/bin/jenkins-agent ${@}" jenkins
-exec su -c "/usr/local/bin/jenkins-agent $AGENT_ARGS" jenkins
+exec su -c "/usr/local/bin/jenkins-agent ${AGENT_ARGS}" jenkins

@@ -13,7 +13,7 @@ state of the build environment at any point.
 
 ## Starting the debugger
 
-Intermediate container hashes are not supported as of Docker version 20.10. 
+Intermediate container hashes are not supported as of Docker version 20.10.
 To view intermediate container hashes:
 
 ```shell
@@ -64,7 +64,7 @@ bin    etc    lib    mnt    proc   run    srv    tmp    var
 dev    home   media  opt    root   sbin   sys    usr    work
 ```
 
-Optional long form allows you specifying detailed configurations of the process. 
+Optional long form allows you specifying detailed configurations of the process.
 It must be CSV-styled comma-separated key-value pairs.
 Supported keys are `args` (can be JSON array format), `entrypoint` (can be JSON array format), `env` (can be JSON array format), `user`, `cwd` and `tty` (bool).
 
@@ -95,7 +95,7 @@ $ docker buildx debug --on=error build .
 ------
 Launching interactive container. Press Ctrl-a-c to switch to monitor console
 Interactive container was restarted with process "edmzor60nrag7rh1mbi4o9lm8". Press Ctrl-a-c to switch to the new container
-/ # 
+/ #
 ```
 
 This allows you to explore the state of the image when the build failed.
@@ -159,7 +159,7 @@ immediately enter the monitor mode.
 
 ```console
 $ docker buildx debug
-[+] Building 0.0s (1/1) FINISHED                                                                                                                                                                                
+[+] Building 0.0s (1/1) FINISHED
  => [internal] connecting to remote controller
 (buildx) list
 ID                              CURRENT_SESSION
@@ -175,7 +175,7 @@ Attached to process "3ug8iqaufiwwnukimhqqt06jz". Press Ctrl-a-c to switch to the
 / # ls
 bin    etc    lib    mnt    proc   run    srv    tmp    var
 dev    home   media  opt    root   sbin   sys    usr    work
-/ # 
+/ #
 ```
 
 ### Debugging failed build
@@ -213,7 +213,7 @@ $ docker buildx debug --on=error build -t media.johnson.int:5000/cicd-build-tool
 ```
 
 UPDATE
-Intermediate container hashes are not supported as of Docker version 20.10. 
+Intermediate container hashes are not supported as of Docker version 20.10.
 To view intermediate container hashes:
 
 ```shell
@@ -265,7 +265,7 @@ Installing collected packages: setuptools, pip
 Successfully installed pip-23.2.1 setuptools-65.5.0
 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
 The command '/bin/sh -c CPPFLAGS="-I/usr/local/openssl/include -I/usr/local/openssl/include/openssl"     LDFLAGS="-L/usr/local/openssl/lib -L/usr/local/openssl/lib64"     pyenv install $PYTHON_VERSION' returned a non-zero code: 1
-$ 
+$
 $ docker run --rm -it b1c595d36fc4 bash -il
 
 ```

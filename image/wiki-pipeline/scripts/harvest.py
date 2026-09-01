@@ -18,7 +18,7 @@ from .utils import (
     load_config,
     load_state,
     save_state,
-    setup_logging
+    setup_logging,
 )
 
 # Create a module-level logger
@@ -26,10 +26,10 @@ log = logging.getLogger(__name__)
 
 
 def harvest(
-        root_dir: Path,
-        limit: int = None,
-        changed_only=False,
-        config_path: str = ".wiki-config.yml"
+    root_dir: Path,
+    limit: int = None,
+    changed_only=False,
+    config_path: str = ".wiki-config.yml",
 ):
     config = load_config(config_path)
     wiki_config = config.get("wiki", {})
@@ -43,7 +43,11 @@ def harvest(
     log.debug(f"harvest_ignore={harvest_ignore}")
 
     # Pre-compile the ignore patterns for performance
-    ignore_spec = pathspec.PathSpec.from_lines('gitwildmatch', harvest_ignore) if harvest_ignore else None
+    ignore_spec = (
+        pathspec.PathSpec.from_lines("gitwildmatch", harvest_ignore)
+        if harvest_ignore
+        else None
+    )
 
     # Get targeted patterns
     rglob_patterns = wiki_config.get("harvest_rglob_patterns", ["**/*.md"])
@@ -66,7 +70,9 @@ def harvest(
         rel_path = harvested_file.relative_to(effective_raw_dir)
 
         # Check if the path is now ignored by config or git
-        if is_ignored(rel_path, harvest_ignore, spec=ignore_spec) or is_ignored_by_git(rel_path, root_dir):
+        if is_ignored(rel_path, harvest_ignore, spec=ignore_spec) or is_ignored_by_git(
+            rel_path, root_dir
+        ):
             log.trace(f"   ⏭️  Removing stale file: {rel_path}")
             os.remove(harvested_file)
             removed_count += 1
@@ -99,14 +105,18 @@ def harvest(
 
         # 1. Consolidated Safety Check:
         # Skip if file is inside the .wiki state dir OR the final wiki dir
-        if any(p == effective_state_dir or p == effective_wiki_dir for p in md_file.parents):
+        if any(
+            p == effective_state_dir or p == effective_wiki_dir for p in md_file.parents
+        ):
             log.trace(f"  Skipping internal/output directory tree: {md_file}")
             continue
 
         # 2. String-based Part Check:
         # Catch matches where the directory name exists in the path segments
-        if any(exclude in md_file.parts for exclude in
-               [str(effective_state_dir), str(effective_wiki_dir)]):
+        if any(
+            exclude in md_file.parts
+            for exclude in [str(effective_state_dir), str(effective_wiki_dir)]
+        ):
             log.trace(f"  Skipping restricted parts: {md_file}")
             continue
 
@@ -146,7 +156,7 @@ def harvest(
         metadata = {
             "original_path": str(rel_path),
             "harvested_date": datetime.now(timezone.utc).isoformat(),
-            "source_type": "legacy_markdown"
+            "source_type": "legacy_markdown",
         }
         target.write_text(add_frontmatter(content, metadata), encoding="utf-8")
 
@@ -178,5 +188,5 @@ if __name__ == "__main__":
         args.root,
         limit=args.limit,
         changed_only=args.changed_only,
-        config_path=args.config
+        config_path=args.config,
     )

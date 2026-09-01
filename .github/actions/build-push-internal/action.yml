@@ -31,19 +31,19 @@ runs:
         # Parse matrix object elements using jq
         NAME=$(echo '${{ inputs.matrix_version }}' | jq -r '.name')
         TARGET_TAG=$(echo '${{ inputs.matrix_version }}' | jq -r '.tag')
-        
+
         BRANCH_NAME=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
-        
+
         TAGS="${{ github.repository_owner }}/$NAME:${BRANCH_NAME}"
         TAGS="$TAGS,${{ github.repository_owner }}/$NAME:${TARGET_TAG}"
         TAGS="$TAGS,${{ github.repository_owner }}/$NAME:${{ github.sha }}"
         TAGS="$TAGS,${{ github.repository_owner }}/$NAME:build-${{ github.run_number }}"
         TAGS="$TAGS,${{ github.repository_owner }}/$NAME:${{ steps.date.outputs.date }}"
-        
+
         if [[ "$BRANCH_NAME" == "master" ]]; then
           TAGS="$TAGS,${{ github.repository_owner }}/$NAME:latest"
         fi
-        
+
         echo "tags=$TAGS" >> $GITHUB_OUTPUT
 
     - name: Set up Docker Buildx

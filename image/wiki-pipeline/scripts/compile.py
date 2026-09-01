@@ -5,7 +5,6 @@ Uses LLM to polish and standardize files in the raw storage into the wiki.
 """
 
 import argparse
-import json
 import logging
 from pathlib import Path
 
@@ -17,7 +16,7 @@ from .utils import (
     load_state,
     save_state,
     setup_logging,
-    LLMClient
+    LLMClient,
 )
 
 # Create a module-level logger
@@ -28,7 +27,7 @@ def compile_raw_to_wiki(
     llm_client: LLMClient,
     limit: int = None,
     changed_only=False,
-    config_path: str = ".wiki-config.yml"
+    config_path: str = ".wiki-config.yml",
 ):
     config = load_config(config_path)
     wiki_config = config.get("wiki", {})
@@ -44,7 +43,7 @@ def compile_raw_to_wiki(
     if "compile" not in state:
         state["compile"] = {}
 
-    log.info(f"Compiling markdown...")
+    log.info("Compiling markdown...")
     ensure_dir(effective_wiki_dir)
     processed = 0
     for md_file in sorted(effective_raw_dir.rglob("*.md")):
@@ -77,9 +76,9 @@ def compile_raw_to_wiki(
             content = content[:max_file_size] + "\n... [truncated - large file] ..."
 
         prompt = (
-            (compile_prompt.get("prefix", "") or "") +
-            f"\n\nOriginal content:\n{content}\n\n" +
-            (compile_prompt.get("suffix", "") or "")
+            (compile_prompt.get("prefix", "") or "")
+            + f"\n\nOriginal content:\n{content}\n\n"
+            + (compile_prompt.get("suffix", "") or "")
         )
 
         try:
@@ -100,7 +99,9 @@ def compile_raw_to_wiki(
 
     save_state(state_path, state)
 
-    log.info(f"\n✅ Successfully compiled {processed} markdown files into {effective_wiki_dir}/")
+    log.info(
+        f"\n✅ Successfully compiled {processed} markdown files into {effective_wiki_dir}/"
+    )
 
 
 if __name__ == "__main__":
@@ -122,13 +123,13 @@ if __name__ == "__main__":
             "model": args.model,
             "api_base": args.api_base,
             "provider": args.provider,
-            "debug_llm": args.debug_llm
-        }
+            "debug_llm": args.debug_llm,
+        },
     )
 
     compile_raw_to_wiki(
         llm_client,
         limit=args.limit,
         changed_only=args.changed_only,
-        config_path=args.config
+        config_path=args.config,
     )

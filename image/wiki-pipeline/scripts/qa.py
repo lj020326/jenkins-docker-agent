@@ -14,10 +14,7 @@ from .utils import ensure_dir, load_config, setup_logging, LLMClient
 log = logging.getLogger(__name__)
 
 
-def generate_qa(
-        llm_client: LLMClient,
-        config_path: str = ".wiki-config.yml"
-):
+def generate_qa(llm_client: LLMClient, config_path: str = ".wiki-config.yml"):
     config = load_config(config_path)
     wiki_config = config.get("wiki", {})
     # llm_config = wiki_config.get("llm", {})
@@ -55,11 +52,8 @@ if __name__ == "__main__":
             "model": args.model,
             "api_base": args.api_base,
             "provider": args.provider,
-            "debug_llm": args.debug_llm
-        }
+            "debug_llm": args.debug_llm,
+        },
     )
 
-    generate_qa(
-        llm_client,
-        config_path=args.config
-    )
+    generate_qa(llm_client, config_path=args.config)

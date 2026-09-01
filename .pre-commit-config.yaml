@@ -1,0 +1,75 @@
+repos:
+  # Standard Pre-Commit Hooks (Formatting & Safety Checks)
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+      - id: check-json
+      - id: check-added-large-files
+        args: ['--maxkb=1024']
+      - id: check-merge-conflict
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+        exclude: (^|/)archive/
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+
+#  # Dockerfile Linting
+#  - repo: https://github.com/hadolint/hadolint
+#    rev: v2.12.0
+#    hooks:
+#      - id: hadolint-docker
+#        files: ^(image/)?Dockerfile$
+
+  - repo: local
+    hooks:
+      - id: hadolint
+        name: Lint Dockerfiles
+        entry: hadolint
+        language: python
+        additional_dependencies: ['hadolint-bin']
+        files: ^(image/)?Dockerfile$
+
+  # YAML Formatting and Syntax Verification
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+        args: [-c, .yamllint]
+        types: [yaml]
+        exclude: (^|/)archive/
+
+#  # Shell Script Linting (for build-push-images.sh & retry_command.sh)
+#  - repo: https://github.com/koalaman/shellcheck-precommit
+#    rev: v0.10.0
+#    hooks:
+#      - id: shellcheck
+#        files: \.(sh|bash)$
+#        exclude: (^|/)archive/
+
+  # Shell Script Linting (Native binaries via PyPI, no Docker required)
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck
+        files: \.(sh|bash)$
+        exclude: (^|/)archive/
+
+  # Python Linting & Formatting (for requirements.txt & embedded python tooling)
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.4.4
+    hooks:
+      - id: ruff
+        args: [--fix]
+        exclude: (^|/)archive/
+      - id: ruff-format
+        exclude: (^|/)archive/
+
+  # Secret & Credentials Prevention Check
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.2
+    hooks:
+      - id: gitleaks

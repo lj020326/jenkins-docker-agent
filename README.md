@@ -1,12 +1,24 @@
+[![License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)](LICENSE.md)
 
 # Jenkins Distributed Automation Agents Collection
 
-An enterprise-grade collection of optimized, purpose-built Docker agent configurations designed for a distributed Jenkins automation ecosystem. Organized into clear decoupled execution layers (base utilities vs. specialized downstream runtime pipelines), these profiles provide resilient build platforms for running multi-version CI/CD execution matrices, isolated testing harnesses, and documentation automation.
+---
 
-### Repository & Engine Metrics
-[![Build Status](https://github.com/lj020326/jenkins-docker-agent/actions/workflows/build-images.yml/badge.svg)](https://github.com/lj020326/jenkins-docker-agent/actions/workflows/build-images.yml)
-[![GitHub issues](https://img.shields.io/github/issues/lj020326/jenkins-docker-agent.svg?style=flat-square)](https://github.com/lj020326/jenkins-docker-agent/issues)
-[![GitHub stars](https://img.shields.io/github/stars/lj020326/jenkins-docker-agent.svg?style=flat-square)](https://github.com/lj020326/jenkins-docker-agent/stargazers)
+## 📑 Table of Contents
+* [Overview & Architecture](#overview-architecture)
+* [CI Status & Metrics](#ci-status-metrics)
+* [Pipeline Topography](#pipeline-topography)
+* [Image Matrix & Manifest](#image-matrix-manifest)
+* [Compilation Control Arguments](#compilation-control-arguments)
+* [Orchestrating Local Builds](#orchestrating-local-builds)
+* [Testing](#testing)
+* [Identity & Maintainer](#identity-maintainer)
+
+---
+
+## <a id="overview-architecture"></a>📐 Overview & Architecture
+
+An enterprise-grade collection of optimized, purpose-built Docker agent configurations designed for a distributed Jenkins automation ecosystem. Organized into clear decoupled execution layers (base utilities vs. specialized downstream runtime pipelines), these profiles provide resilient build platforms for running multi-version CI/CD execution matrices, isolated testing harnesses, and documentation automation.
 
 ### Image Delivery Status
 [![cicd-build-tools Pulls](https://img.shields.io/docker/pulls/lj020326/cicd-build-tools.svg?style=flat-square&label=cicd-build-tools)](https://hub.docker.com/repository/docker/lj020326/cicd-build-tools/)
@@ -18,7 +30,15 @@ An enterprise-grade collection of optimized, purpose-built Docker agent configur
 
 ---
 
-## 📐 Pipeline Topography
+## <a id="ci-status-metrics"></a>🛠️ CI Status & Metrics
+
+[![Build Status](https://github.com/lj020326/jenkins-docker-agent/actions/workflows/build-images.yml/badge.svg)](https://github.com/lj020326/jenkins-docker-agent/actions/workflows/build-images.yml)
+[![GitHub issues](https://img.shields.io/github/issues/lj020326/jenkins-docker-agent.svg?style=flat-square)](https://github.com/lj020326/jenkins-docker-agent/issues)
+[![GitHub stars](https://img.shields.io/github/stars/lj020326/jenkins-docker-agent.svg?style=flat-square)](https://github.com/lj020326/jenkins-docker-agent/stargazers)
+
+---
+
+## <a id="pipeline-topography"></a>📐 Pipeline Topography
 
 The images in this repository adhere to a strict structural dependency pipeline defined via `.github/images-config.yml`. The core base layer establishes the base operating system foundation, system-level software, and fundamental utilities, while all specialized agent profiles extend directly from it as decoupled consumer variants.
 
@@ -50,7 +70,7 @@ graph TD
 
 ---
 
-## 📦 Image Matrix & Manifest
+## <a id="image-matrix-manifest"></a>📦 Image Matrix & Manifest
 
 ### Base Platform Image
 #### 🔹 `cicd-build-tools`
@@ -92,7 +112,7 @@ graph TD
 
 ---
 
-## ⚙️ Compilation Control Arguments
+## <a id="compilation-control-arguments"></a>⚙️ Compilation Control Arguments
 
 The matrix utilizes parameterized configurations to adapt to architectural upgrades smoothly without forcing manual inline updates to downstream layers:
 
@@ -106,7 +126,7 @@ The matrix utilizes parameterized configurations to adapt to architectural upgra
 
 ---
 
-## 🛠️ Orchestrating Local Builds
+## <a id="orchestrating-local-builds"></a>🛠️ Orchestrating Local Builds
 
 Images can be individually tested and compiled locally from the root directory using the contexts mapped in the configuration manifest:
 
@@ -120,7 +140,14 @@ docker build -t wiki-pipeline:latest -f image/wiki-pipeline/Dockerfile image/wik
 
 ---
 
-## 🛡️ Identity & Maintainer
+## <a id="testing"></a>🧪 Testing
+
+See the [TESTING.md](TESTING.md) for information on how to run the necessary tests.
+
+---
+
+## <a id="identity-maintainer"></a>🛡️ Identity & Maintainer
+
 * **Maintainer:** Lee Johnson
 * **Contact:** <ljohnson@dettonville.org>
 * **LinkedIn:** https://www.linkedin.com/in/leejjohnson/

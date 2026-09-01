@@ -3,20 +3,22 @@
 # Ensure that all nodes in /dev/mapper correspond to mapped devices currently loaded by the device-mapper kernel driver
 dmsetup mknodes
 
+DOCKER_DAEMON_ARGS=${DOCKER_DAEMON_ARGS:-""}
+
 # First, make sure that cgroups are mounted correctly.
 CGROUP=/sys/fs/cgroup
-: {LOG:=stdio}
+: "${LOG:=stdio}"
 
-[ -d $CGROUP ] ||
-    mkdir $CGROUP
+[[ -d "${CGROUP}" ]] ||
+    mkdir "${CGROUP}"
 
-mountpoint -q $CGROUP ||
-    mount -n -t tmpfs -o uid=0,gid=0,mode=0755 cgroup $CGROUP || {
+mountpoint -q "${CGROUP}" ||
+    mount -n -t tmpfs -o uid=0,gid=0,mode=0755 cgroup "${CGROUP}" || {
         echo "Could not make a tmpfs mount. Did you use --privileged?"
         exit 1
     }
 
-if [ -d /sys/kernel/security ] && ! mountpoint -q /sys/kernel/security
+if [[ -d /sys/kernel/security ]] && ! mountpoint -q /sys/kernel/security
 then
     mount -t securityfs none /sys/kernel/security || {
         echo "Could not mount /sys/kernel/security."
@@ -25,15 +27,17 @@ then
 fi
 
 # Mount the cgroup hierarchies exactly as they are in the parent system.
-for SUBSYS in $(cut -d: -f2 /proc/1/cgroup)
-do
-        [ -d $CGROUP/$SUBSYS ] || mkdir $CGROUP/$SUBSYS
-        mountpoint -q $CGROUP/$SUBSYS ||
-                mount -n -t cgroup -o $SUBSYS cgroup $CGROUP/$SUBSYS
+while IFS= read -r line; do
+        SUBSYS=$(echo "${line}" | cut -d: -f2)
+        [[ -n "${SUBSYS}" ]] || continue
+
+        [[ -d "${CGROUP}/${SUBSYS}" ]] || mkdir "${CGROUP}/${SUBSYS}"
+        mountpoint -q "${CGROUP}/${SUBSYS}" ||
+                mount -n -t cgroup -o "${SUBSYS}" cgroup "${CGROUP}/${SUBSYS}"
 
         # The two following sections address a bug which manifests itself
         # by a cryptic "lxc-start: no ns_cgroup option specified" when
-        # trying to start containers withina container.
+        # trying to start containers within a container.
         # The bug seems to appear when the cgroup hierarchies are not
         # mounted on the exact same directories in the host, and in the
         # container.
@@ -44,9 +48,9 @@ do
         # Systemd and OpenRC (and possibly others) both create such a
         # cgroup. To avoid the aforementioned bug, we symlink "foo" to
         # "name=foo". This shouldn't have any adverse effect.
-        echo $SUBSYS | grep -q ^name= && {
-                NAME=$(echo $SUBSYS | sed s/^name=//)
-                ln -s $SUBSYS $CGROUP/$NAME
+        echo "${SUBSYS}" | grep -q ^name= && {
+                NAME="${SUBSYS#name=}"
+                ln -s "${SUBSYS}" "${CGROUP}/${NAME}"
         }
 
         # Likewise, on at least one system, it has been reported that
@@ -54,8 +58,8 @@ do
         # (respectively "cpu" and "cpuacct") with "-o cpuacct,cpu"
         # but on a directory called "cpu,cpuacct" (note the inversion
         # in the order of the groups). This tries to work around it.
-        [ $SUBSYS = cpuacct,cpu ] && ln -s $SUBSYS $CGROUP/cpu,cpuacct
-done
+        [[ "${SUBSYS}" = "cpuacct,cpu" ]] && ln -s "${SUBSYS}" "${CGROUP}/cpu,cpuacct"
+done < /proc/1/cgroup
 
 # Note: as I write those lines, the LXC userland tools cannot setup
 # a "sub-container" properly if the "devices" cgroup is not in its
@@ -66,20 +70,20 @@ grep -qw devices /proc/1/cgroup ||
     echo "WARNING: it looks like the 'devices' cgroup is not mounted."
 
 # Now, close extraneous file descriptors.
-pushd /proc/self/fd >/dev/null
+pushd /proc/self/fd >/dev/null || exit
 for FD in *
 do
-    case "$FD" in
+    case "${FD}" in
     # Keep stdin/stdout/stderr
     [012])
         ;;
     # Nuke everything else
     *)
-        eval exec "$FD>&-"
+        eval exec "${FD}>&-"
         ;;
     esac
 done
-popd >/dev/null
+popd >/dev/null || exit
 
 
 # If a pidfile is still around (for example after a container restart),
@@ -88,16 +92,19 @@ rm -rf /var/run/docker.pid
 
 # If we were given a PORT environment variable, start as a simple daemon;
 # otherwise, spawn a shell as well
-if [ "$PORT" ]
+if [[ -n "${PORT}" ]]
 then
-    exec dockerd -H 0.0.0.0:$PORT -H unix:///var/run/docker.sock \
-        $DOCKER_DAEMON_ARGS
+    # shellcheck disable=SC2086
+    exec dockerd -H 0.0.0.0:"${PORT}" -H unix:///var/run/docker.sock \
+        "${DOCKER_DAEMON_ARGS}"
 else
-    if [ "$LOG" == "file" ]
+    if [[ "${LOG}" == "file" ]]
     then
-        dockerd $DOCKER_DAEMON_ARGS &>/var/log/docker.log &
+        # shellcheck disable=SC2086
+        dockerd "${DOCKER_DAEMON_ARGS}" &>/var/log/docker.log &
     else
-        dockerd $DOCKER_DAEMON_ARGS &
+        # shellcheck disable=SC2086
+        dockerd "${DOCKER_DAEMON_ARGS}" &
     fi
     (( timeout = 60 + SECONDS ))
     until docker info >/dev/null 2>&1
@@ -108,6 +115,6 @@ else
         fi
         sleep 1
     done
-    [[ $1 ]] && exec "$@"
+    [[ -n $1 ]] && exec "$@"
     exec bash --login
 fi

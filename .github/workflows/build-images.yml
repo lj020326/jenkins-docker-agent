@@ -31,7 +31,7 @@ jobs:
           # Use yq to filter images by type and export as compressed JSON
           BASE_JSON=$(yq -o=json -I=0 '.images | map(select(.type == "base"))' .github/images-config.yml)
           DEP_JSON=$(yq -o=json -I=0 '.images | map(select(.type == "dependent"))' .github/images-config.yml)
-          
+
           echo "base=$BASE_JSON" >> $GITHUB_OUTPUT
           echo "dependent=$DEP_JSON" >> $GITHUB_OUTPUT
 
