@@ -33,3 +33,5 @@ buildImageGroups:
 #        buildDir: "image/jenkins-swarm-agent"
       - buildImageName: "wiki-pipeline"
         buildDir: "image/wiki-pipeline"
+      - buildImageName: "crewai-doc-agent"
+        buildDir: "image/crewai-doc-agent"

@@ -109,33 +109,40 @@ def main():
         "config_path": args.config,
     }
 
-    # Instantiate LLM setup/config once upon startup
-    llm_client = LLMClient(
-        config_path=args.config,
-        overrides={
-            "model": args.model,
-            "api_base": args.api_base,
-            "provider": args.provider,
-            "debug_llm": args.debug_llm,
-        },
-    )
+    try:
+        # Instantiate LLM setup/config once upon startup
+        llm_client = LLMClient(
+            config_path=args.config,
+            overrides={
+                "model": args.model,
+                "api_base": args.api_base,
+                "provider": args.provider,
+                "debug_llm": args.debug_llm,
+            },
+        )
 
-    if args.command == "harvest":
-        harvest(Path("."), **common_kwargs)
-    elif args.command == "ingest":
-        ingest_ansible_yaml(llm_client, Path("."), **common_kwargs)
-    elif args.command == "compile":
-        compile_raw_to_wiki(llm_client, **common_kwargs)
-    elif args.command == "lint":
-        lint_wiki(llm_client, **common_kwargs)
-    elif args.command == "index":
-        generate_wiki_index(Path("."), args.config)
-    elif args.command == "qa":
-        generate_qa(llm_client, args.config)
-    elif args.command == "generate-media":
-        generate_media(llm_client, args.config)
-    else:
-        parser.print_help()
+        if args.command == "harvest":
+            harvest(Path("."), **common_kwargs)
+        elif args.command == "ingest":
+            ingest_ansible_yaml(llm_client, repo_root=Path("."), **common_kwargs)
+        elif args.command == "compile":
+            compile_raw_to_wiki(llm_client, **common_kwargs)
+        elif args.command == "lint":
+            lint_wiki(llm_client, fix=args.fix, **common_kwargs)
+        elif args.command == "index":
+            generate_wiki_index(repo_root=Path("."), config_path=args.config)
+        elif args.command == "qa":
+            generate_qa(llm_client, config_path=args.config)
+        elif args.command == "generate-media":
+            generate_media(llm_client, config_path=args.config)
+        else:
+            parser.print_help()
+    except Exception:
+        # If verbosity is -vv or greater (args.verbose >= 2, i.e., TRACE level),
+        # re-raise to output the full stack trace. Otherwise, exit cleanly.
+        if args.verbose >= 2:
+            raise
+        sys.exit(1)
 
 
 if __name__ == "__main__":

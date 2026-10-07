@@ -5,10 +5,17 @@ Research-style Q&A generation - can be called by lint or manually.
 """
 
 import argparse
+import litellm
 import logging
 from pathlib import Path
 
-from .utils import ensure_dir, load_config, setup_logging, LLMClient
+from .utils import (
+    LLMClient,
+    ensure_dir,
+    load_config,
+    render_yaml_prompt,
+    setup_logging,
+)
 
 # Create a module-level logger
 log = logging.getLogger(__name__)
@@ -27,12 +34,22 @@ def generate_qa(llm_client: LLMClient, config_path: str = ".wiki-config.yml"):
     log.info("Generating Q&A section...")
 
     qa_prompt = wiki_config.get("qa_prompt", "Generate important Q&A pairs...")
+    messages = render_yaml_prompt(qa_prompt)
 
-    qa_content = llm_client.get_response(qa_prompt)
+    try:
+        qa_content = llm_client.get_response(messages)
 
-    full_content = f"# Frequently Asked Questions\n\n{qa_content}\n"
-    qa_file.write_text(full_content, encoding="utf-8")
-    log.info(f"✅ QA section generated at {qa_file}")
+        full_content = f"# Frequently Asked Questions\n\n{qa_content}\n"
+        qa_file.write_text(full_content, encoding="utf-8")
+        log.info(f"✅ QA section generated at {qa_file}")
+    except litellm.InternalServerError as e:
+        log.error(f"   💥 Fatal LLM Internal Server Error: {e}")
+        raise
+    except (ConnectionError, TimeoutError) as e:
+        log.error(f"   💥 Fatal Connection/Timeout Error: {e}")
+        raise
+    except Exception as e:
+        log.error(f"   ⚠️ Skipping LLM pass due to error: {e}")
 
 
 if __name__ == "__main__":
