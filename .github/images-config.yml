@@ -24,14 +24,20 @@ images:
     tag: latest
     type: dependent
 
+  - name: jenkins-docker-agent
+    dockerfile: image/jenkins-docker-agent/Dockerfile
+    context: image/jenkins-docker-agent
+    tag: latest
+    type: dependent
+
   - name: wiki-pipeline
     dockerfile: image/wiki-pipeline/Dockerfile
     context: image/wiki-pipeline
     tag: latest
     type: dependent
 
-  - name: jenkins-docker-agent
-    dockerfile: image/jenkins-docker-agent/Dockerfile
-    context: image/jenkins-docker-agent
+  - name: crewai-doc-agent
+    dockerfile: image/crewai-doc-agent/Dockerfile
+    context: image/crewai-doc-agent
     tag: latest
     type: dependent

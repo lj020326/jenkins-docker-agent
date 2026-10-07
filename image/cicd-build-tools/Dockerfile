@@ -12,11 +12,12 @@ FROM eclipse-temurin:${JAVA_VERSION}-jdk AS jdk-source
 #=============================================================================
 FROM python:${PYTHON_VERSION}-slim-${DEBIAN_VERSION} AS builder
 
-ENV YQ_VERSION=v4.53.2
-ENV YQ_BINARY=yq_linux_amd64
 ARG GOVC_VERSION=v0.53.1
-ARG PACKER_VERSION=1.15.3
 ARG INCLUSIVITY_VERSION=0.19.0
+ARG PACKER_VERSION=1.15.3
+ARG TGREP_VERSION=1.0.11
+ARG YQ_BINARY=yq_linux_amd64
+ARG YQ_VERSION=v4.53.2
 
 RUN apt-get update && apt-get install -y --no-install-recommends unzip tar curl \
     && rm -rf /var/lib/apt/lists/* \
@@ -25,15 +26,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends unzip tar curl 
 # ADD auto-extracts local archives, saving extract layers
 ADD files/${YQ_BINARY}_${YQ_VERSION}.tar.gz /tmp/
 ADD files/govc_${GOVC_VERSION}_linux_x86_64.tar.gz /tmp/
-COPY files/packer_${PACKER_VERSION}_linux_amd64.zip /tmp/
+ADD files/tgrep-v${TGREP_VERSION}-x86_64-unknown-linux-musl.tar.gz /tmp/
 ADD files/inclusivity-${INCLUSIVITY_VERSION}-linux-amd64.tar.gz /tmp/
+COPY files/packer_${PACKER_VERSION}_linux_amd64.zip /tmp/
 
 RUN mv /tmp/${YQ_BINARY} /out/usr/local/bin/yq || mv /tmp/*${YQ_BINARY}* /out/usr/local/bin/yq && \
     mv /tmp/govc /out/usr/local/bin/govc || true && \
+    mv /tmp/tgrep /out/usr/local/bin/tgrep || true && \
     unzip /tmp/packer_${PACKER_VERSION}_linux_amd64.zip packer -d /out/usr/local/bin/ && \
     mv /tmp/inclusivity /out/usr/local/bin/inclusivity || true
 
 COPY retry_command.sh /out/usr/local/bin/retry_command.sh
+COPY build-fts5-index.py /out/usr/local/bin/build-fts5-index
 RUN chmod +x /out/usr/local/bin/*
 
 #=============================================================================
@@ -84,6 +88,7 @@ RUN set -o pipefail && \
       apt-transport-https apt-utils ca-certificates \
       bash tar zip unzip xorriso \
       curl git git-lfs \
+      universal-ctags \
       locales tzdata netbase \
       tree less jq rsync \
       dnsutils iproute2 iputils-ping inetutils-telnet \
@@ -160,11 +165,11 @@ ENV HOME=/root
 WORKDIR "${HOME}"
 
 # Ensure the directories Ansible (and other tools) expect exist
+# optional: still keep a jenkins home in case someone runs without -u 0:0
 RUN mkdir -p ${HOME}/.ansible_async \
              ${HOME}/.ansible/collections \
              ${HOME}/.ssh \
              ${HOME}/.docker/buildx/instances && \
-    # optional: still keep a jenkins home in case someone runs without -u 0:0
     mkdir -p /home/${user}/.ansible_async \
              /home/${user}/.ansible/collections \
              /home/${user}/.ssh \

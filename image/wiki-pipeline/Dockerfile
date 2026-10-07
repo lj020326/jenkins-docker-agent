@@ -28,5 +28,7 @@ RUN printf '#!/bin/bash\nexec python3 -u /app/scripts/cli.py "$@"\n' > /usr/loca
 
 ENV PYTHONPATH=/app
 ENV PATH="/app/scripts:${PATH}"
+ENV LITELLM_LOCAL_MODEL_COST_MAP=True
+ENV LITELLM_SKIP_MODEL_INFO_QUERY=True
 
 CMD ["--help"]

@@ -1,0 +1,17 @@
+# ================================================
+# CrewAI Documentation Agent Configuration
+# ================================================
+
+agent:
+  name: "CrewAI Documentation & Analysis Agent"
+  model: "qwen2.5-coder:32b"
+  api_base: "http://gpu02.example.int:11434/v1"
+  provider: "openai"
+  temperature: 0.2
+  max_tokens: 4096
+
+  # Tools enabled for the CrewAI Agent
+  tools:
+    - code_search
+    - file_reader
+    - doc_generator

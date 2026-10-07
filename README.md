@@ -116,13 +116,13 @@ graph TD
 
 The matrix utilizes parameterized configurations to adapt to architectural upgrades smoothly without forcing manual inline updates to downstream layers:
 
-| Argument Parameter | Default | Intended Target Purpose |
-| :--- | :--- | :--- |
-| `JAVA_VERSION` | `21` | Configures the underlying enterprise Java execution layer. |
-| `PYTHON_VERSION` | `3.13` | Declares the default system interpreter branch version. |
-| `DEBIAN_VERSION` | `bookworm` | Pinpoints the core target distribution layer variant (`bookworm`, `bullseye`). |
-| `ANSIBLE_CORE_VERSION`| `latest` | Locks the targeted configuration framework foundation version. |
-| `DOCKER_GID` | `1102` | Matches internal container mounts to host engine sockets to avoid permission errors. |
+| Argument Parameter     | Default    | Intended Target Purpose                                                              |
+|:-----------------------|:-----------|:-------------------------------------------------------------------------------------|
+| `JAVA_VERSION`         | `21`       | Configures the underlying enterprise Java execution layer.                           |
+| `PYTHON_VERSION`       | `3.13`     | Declares the default system interpreter branch version.                              |
+| `DEBIAN_VERSION`       | `bookworm` | Pinpoints the core target distribution layer variant (`bookworm`, `bullseye`).       |
+| `ANSIBLE_CORE_VERSION` | `latest`   | Locks the targeted configuration framework foundation version.                       |
+| `DOCKER_GID`           | `1102`     | Matches internal container mounts to host engine sockets to avoid permission errors. |
 
 ---
 
