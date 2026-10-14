@@ -86,48 +86,56 @@ wiki:
     timeout: 1200
 
   # ================================================
-  # Prompt Templates - Fully Customizable
+  # Prompt Templates - YAML-based Payload Structure
   # ================================================
 
   role_prompt:
-    prefix: |
+    system: |
       You are an expert Ansible architect and excellent technical writer.
-      Create a **comprehensive, high-quality, professional documentation page** for this Ansible role.
-    suffix: |
+      Your task is to create a comprehensive, high-quality, professional documentation page for an Ansible role.
+      Follow GitHub Markdown specifications strictly (no Obsidian syntax).
+    user: |
+      Role Path: {rel_role_path}
+
+      ### Role Source Files:
+      {files_section}
+
+      {readme_section}
+
+      {usage_section}
+
       Requirements:
-      - Start with clean YAML frontmatter (title, role, category, type, tags)
-      - One-paragraph summary of the role's purpose
-      - Sections: Variables, Usage, Dependencies, Tags, Best Practices, Molecule Tests (if any)
-      - Use the existing role's README.md if it exists to help derive role purpose and variable usage/purpose.
-      - Include a '## Backlinks' section with relative links back to original role files.
-        Note role source code back-references must derive the relative path to the role source directory.
-        E.g.,
-        Assuming the `wiki.output_dir` directory is set to the default then the role "apply_common_groups"
-        `defaults/main.yml` reference should be "../../roles/apply_common_groups/defaults/main.yml".
-      - Double-underscore variables (e.g. __internal_var) are internal role variables only. Never document them as user-configurable.
-      - Do not invent "Related Roles" that do not exist in the repository.  Only include roles used in the source for the role.
-      - Use only real relative links to files that actually exist.
-      - Professional tone, clear headings, excellent readability.
-      - Use only standard GitHub Markdown. No Obsidian syntax.
+      - Start with clean YAML frontmatter (title, role, category, type, tags).
+      - Provide a one-paragraph summary of the role's purpose.
+      - Include sections: Variables, Usage, Dependencies, Tags, Best Practices, and Molecule Tests (if any).
+      - Include a '## Backlinks' section with relative paths back to original role files (e.g., `../../roles/{role_name}/defaults/main.yml`).
+      - Never document double-underscore variables (e.g., `__internal_var`) as user-configurable.
+      - Do not invent related roles that do not exist in the repository.
 
   compile_prompt:
-    prefix: |
-      You are an expert technical writer.
-      Improve and standardize this documentation page for GitHub rendering.
-      Keep all original information and meaning.
-      Use clean, professional Markdown.
-    suffix: |
-      Add or improve YAML frontmatter (title, original_path, category, tags).
-      Ensure clear structure, proper headings, and a "Backlinks" section if missing.
-      Output only the improved Markdown.
+    system: |
+      You are an expert technical writer specializing in documentation standardization.
+      Improve and standardize documentation pages for GitHub rendering while preserving all original information and meaning.
+    user: |
+      Original content:
+      {content}
+
+      Instructions:
+      - Add or improve YAML frontmatter (title, original_path, category, tags).
+      - Ensure clear structure, proper headings, and a "Backlinks" section if missing.
+      - Output only the improved Markdown.
 
   lint_prompt:
-    prefix: |
-      You are a strict technical documentation reviewer.
-      Analyze this documentation page for quality, consistency, and completeness.
-    suffix: |
-      Return findings in this exact format only:
-      ### {filename}
+    system: |
+      You are a strict technical documentation reviewer analyzing Markdown files for quality, consistency, and completeness.
+    user: |
+      File: {file_id}
+
+      Content:
+      {truncated_content}
+
+      Analyze the document and return findings in this exact format only:
+      ### {file_id}
       **Issues:**
       - issue 1
       - issue 2
@@ -135,11 +143,13 @@ wiki:
       - suggestion 1
       - suggestion 2
 
-  qa_prompt: |
-    You are a helpful technical support engineer for this Ansible datacenter repository.
-    Generate 8-12 important, frequently asked Q&A pairs based on the content of this wiki.
-    Focus on common user questions, troubleshooting steps, best practices, and gotchas.
-    Format as a clean Q&A list using Markdown.
+  qa_prompt:
+    system: |
+      You are a helpful technical support engineer for this Ansible datacenter repository.
+    user: |
+      Generate 8-12 important, frequently asked Q&A pairs based on the content of this wiki.
+      Focus on common user questions, troubleshooting steps, best practices, and gotchas.
+      Format as a clean Q&A list using Markdown.
 
   # Group roles into logical categories (optional but recommended)
   categories:

@@ -8,11 +8,14 @@ import logging
 import os
 import pathspec
 import pprint
+import re
+import requests
+import sqlite3
 import subprocess
 import sys
 import yaml
 from pathlib import Path
-
+from requests.auth import HTTPBasicAuth
 
 # Module-level cache for configuration (loaded once per process)
 _config_cache = None
@@ -50,14 +53,6 @@ def setup_logging(verbose_level: int, debug_llm: bool = False):
         format="[%(levelname)s] %(name)s: %(message)s",
         handlers=[logging.StreamHandler(sys.stdout)],
     )
-    # logging.basicConfig(
-    #     level=logging.WARNING,
-    #     format="%(asctime)s [%(levelname)s] %(message)s",
-    #     datefmt="%Y-%m-%d %H:%M:%S",
-    #     handlers=[
-    #         logging.StreamHandler(sys.stdout)
-    #     ]
-    # )
 
     # 2. Define the level for OUR scripts
     if verbose_level >= 2:
@@ -68,8 +63,6 @@ def setup_logging(verbose_level: int, debug_llm: bool = False):
         level = logging.INFO
 
     # 3. Configure the 'scripts' parent logger
-    # Every file that starts with 'from .utils import log' or
-    # 'logging.getLogger(__name__)' will now inherit this level.
     pipeline_logger = logging.getLogger("scripts")
     pipeline_logger.setLevel(level)
 
@@ -94,9 +87,6 @@ def setup_logging(verbose_level: int, debug_llm: bool = False):
     # Log the status of your internal debug flag
     log.debug(f"Logging initialized: level={level}, debug_llm={debug_llm}")
 
-    # # Some versions of LiteLLM also use a 'LiteLLM' logger (capitalized)
-    # logging.getLogger("LiteLLM").setLevel(logging.WARNING)
-
 
 def get_default_config():
     """Internal defaults if .wiki-config.yml is missing"""
@@ -116,16 +106,19 @@ def get_default_config():
             "harvest_ignore": [
                 ".continue/",
                 "archive/",
+                "docs/",
                 "inventory/",
                 "molecule/",
                 "plugins/",
                 "save/",
                 "tests/",
+                "venv/",
             ],
+            "ingest_ignore": ["**/vars/vault.yml", "venv/", "molecule/"],
             "title": "Ansible Datacenter Wiki",
             "llm": {
                 "model": "qwen2.5-coder:32b",
-                "api_base": "http://gpu02.johnson.int:11434/v1",
+                "api_base": "http://gpu02.example.int:11434/v1",
                 "api_key": "dummy-key",
                 "provider": "openai",
                 "temperature": 0.25,
@@ -133,20 +126,21 @@ def get_default_config():
                 "timeout": 1200,
             },
             "role_prompt": {
-                "prefix": "You are an expert Ansible architect and excellent technical writer.\nCreate a comprehensive, high-quality, professional documentation page.",
-                "suffix": "Important notes:\n- Double-underscore variables are internal only.\n- Do not invent Related Roles.\n- Use only standard GitHub Markdown.",
+                "system": "You are an expert Ansible architect and excellent technical writer.\nYour task is to create a comprehensive, high-quality, professional documentation page for an Ansible role.\nFollow GitHub Markdown specifications strictly (no Obsidian syntax).\n",
+                "user": "Role Path: {rel_role_path}\n\n### Role Source Files:\n{files_section}\n\n{readme_section}\n\n{usage_section}\n\nRequirements:\n- Start with clean YAML frontmatter (title, role, category, type, tags).\n- Provide a one-paragraph summary of the role's purpose.\n- Include sections: Variables, Usage, Dependencies, Tags, Best Practices, and Molecule Tests (if any).\n- Include a '## Backlinks' section with relative paths back to original role files (e.g., `../../roles/{role_name}/defaults/main.yml`).\n- Never document double-underscore variables (e.g., `__internal_var`) as user-configurable.\n- Do not invent related roles that do not exist in the repository.\n",
             },
             "compile_prompt": {
-                "prefix": "You are an expert technical writer.\nImprove and standardize this documentation page for GitHub rendering.",
-                "suffix": "Keep all original information. Add proper YAML frontmatter, categories, and a Backlinks section if missing.\nOutput only the improved Markdown.",
+                "system": "You are an expert technical writer specializing in documentation standardization.\nImprove and standardize documentation pages for GitHub rendering while preserving all original information and meaning.\n",
+                "user": 'Original content:\n{content}\n\nInstructions:\n- Add or improve YAML frontmatter (title, original_path, category, tags).\n- Ensure clear structure, proper headings, and a "Backlinks" section if missing.\n- Output only the improved Markdown.\n',
             },
             "lint_prompt": {
-                "prefix": "You are a strict technical documentation reviewer.\nAnalyze this documentation page for issues.",
-                "suffix": "Return findings in this exact format:\n### {filename}\n**Issues:**\n- issue 1\n**Suggestions:**\n- suggestion 1",
+                "system": "You are a strict technical documentation reviewer analyzing Markdown files for quality, consistency, and completeness.\n",
+                "user": "File: {file_id}\n\nContent:\n{truncated_content}\n\nAnalyze the document and return findings in this exact format only:\n### {file_id}\n**Issues:**\n- issue 1\n- issue 2\n**Suggestions:**\n- suggestion 1\n- suggestion 2\n",
             },
-            "qa_prompt": "You are a helpful technical support engineer.\nGenerate 8-12 important Q&A pairs based on the wiki content.",
-            "roles_ignore": [],
-            "priority_roles": [],
+            "qa_prompt": {
+                "system": "You are a helpful technical support engineer for this Ansible datacenter repository.\n",
+                "user": "Generate 8-12 important, frequently asked Q&A pairs based on the content of this wiki.\nFocus on common user questions, troubleshooting steps, best practices, and gotchas.\nFormat as a clean Q&A list using Markdown.\n",
+            },
         }
     }
 
@@ -179,6 +173,72 @@ def load_config(config_path: str = ".wiki-config.yml", force_reload: bool = Fals
     return _config_cache
 
 
+def render_yaml_prompt(prompt_config, **kwargs) -> list[dict]:
+    """
+    Renders a YAML-based prompt structure (containing system and user sections)
+    into standard OpenAI/LiteLLM chat messages format: [{'role': 'system', ...}, {'role': 'user', ...}]
+    """
+    messages = []
+    if not isinstance(prompt_config, dict):
+        # Fallback if a plain string was provided in legacy configs
+        return [{"role": "user", "content": str(prompt_config).format(**kwargs)}]
+
+    system_tmpl = prompt_config.get("system", "")
+    if system_tmpl:
+        system_content = system_tmpl.format(**kwargs)
+        messages.append({"role": "system", "content": system_content.strip()})
+
+    user_tmpl = prompt_config.get("user", "")
+    if user_tmpl:
+        user_content = user_tmpl.format(**kwargs)
+        messages.append({"role": "user", "content": user_content.strip()})
+    elif not messages:
+        # Fallback if neither system nor user keys exist but it's a dict
+        messages.append(
+            {"role": "user", "content": str(prompt_config).format(**kwargs)}
+        )
+
+    return messages
+
+
+class IndexHelper:
+    """Interface for querying the sqlite3 FTS5 index generated by runIndexerPipeline.groovy."""
+
+    def __init__(self, repo_root: Path, index_dir: str = ".code_index"):
+        self.db_path = repo_root / index_dir / "code_search.db"
+        self.enabled = self.db_path.exists()
+
+    def search_code(self, query_term: str, limit: int = 10) -> list:
+        if not self.enabled:
+            return []
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT filepath, snippet(code_fts, 2, '<b>', '</b>', '...', 10)
+                FROM code_fts
+                WHERE code_fts MATCH ?
+                LIMIT ?
+                """,
+                (query_term, limit),
+            )
+            results = cursor.fetchall()
+            conn.close()
+            return results
+        except Exception as e:
+            logging.debug(f"Index query failed for '{query_term}': {e}")
+            return []
+
+    def find_role_dependents(self, role_name: str) -> list:
+        """Find playbooks or roles referencing this role via include_role/import_role."""
+        if not self.enabled:
+            return []
+        query = f'"role: {role_name}" OR "{role_name}"'
+        matches = self.search_code(query, limit=20)
+        return [m[0] for m in matches if m[0].endswith((".yml", ".yaml"))]
+
+
 class LLMClient:
     def __init__(self, config_path=".wiki-config.yml", overrides=None):
         # 1. Load configuration once
@@ -201,34 +261,146 @@ class LLMClient:
             overrides.get("api_key")
             or llm_cfg.get("api_key")
             or os.getenv("LLM_API_KEY")
+            or os.getenv("VLLM_API_KEY")
             or os.getenv("OPENAI_API_KEY")
             or os.getenv("LITELLM_API_KEY")
-            or ""  # Default fallback placeholder for local Ollama/vLLM endpoints
+            or ""
         )
 
-        # 3. Apply LiteLLM SDK initializations
+        # 3. Setup system CA bundle paths for requests & SSL verification
+        self.verify_cert = self._resolve_ca_bundle()
+
+        # 4. Apply LiteLLM SDK initializations
         self._initialize_litellm(llm_cfg, overrides.get("debug_llm", False))
 
-        # 4. Set default generation parameters
+        # 5. Set default generation parameters
         self.default_params = {
             "temperature": llm_cfg.get("temperature", 0.25),
             "max_tokens": llm_cfg.get("max_tokens", 4096),
             "timeout": llm_cfg.get("timeout", 900),
         }
 
-    def _load_config(self, config_path):
+        # 6. Perform health check on initialization to fail fast if unreachable
+        self._check_health()
+
+    @staticmethod
+    def _load_config(config_path):
         return load_config(config_path)
 
-    def _initialize_litellm(self, cfg, debug_override=False):
+    def _resolve_ca_bundle(self):
+        """
+        Determines the appropriate CA bundle path from system locations
+        or environment overrides so that Python 'requests' and 'litellm' trust
+        custom/corporate root certificates mounted in containers.
+        """
+        # If explicitly provided via environment variables, respect them first
+        env_bundle = os.getenv("REQUESTS_CA_BUNDLE") or os.getenv("SSL_CERT_FILE")
+        if env_bundle and os.path.exists(env_bundle):
+            log.debug(f"Using CA bundle from environment: {env_bundle}")
+            return env_bundle
+
+        # Common Linux container system CA bundle locations
+        candidate_paths = [
+            "/etc/ssl/certs/ca-certificates.crt",  # Debian / Ubuntu / Alpine
+            "/etc/pki/tls/certs/ca-bundle.crt",  # RHEL / CentOS / Fedora
+            "/etc/ssl/cert.pem",  # General OpenSSL
+        ]
+
+        for path in candidate_paths:
+            if os.path.exists(path):
+                log.debug(f"Found system CA bundle at: {path}")
+                # Export environment variables so underlying libraries (like httpx/certifi/requests) use it too
+                os.environ.setdefault("REQUESTS_CA_BUNDLE", path)
+                os.environ.setdefault("SSL_CERT_FILE", path)
+                return path
+
+        # Fallback to True (default certifi store) if no system bundle is explicitly found
+        log.warning(
+            "No standard system CA bundle found in common paths. Falling back to default certifi bundle."
+        )
+        return True
+
+    def _check_health(self):
+        """
+        Performs a health check against the LLM/Ollama endpoint mirroring curl probes.
+        Sends a GET request to /api/tags with Basic or Bearer Authentication as configured.
+        """
+        base_url = self.api_base.rstrip("/")
+
+        # Determine tags endpoint based on common Ollama/vLLM structures
+        if base_url.endswith("/v1"):
+            # OpenAI compatible API
+            tags_url = f"{base_url}/models"
+            root_url = base_url[:-3]
+        elif base_url.endswith("/api"):
+            tags_url = f"{base_url}/tags"
+            root_url = base_url[:-4]
+        else:
+            tags_url = f"{base_url}/api/tags"
+            root_url = base_url
+
+        headers = {}
+        auth = None
+
+        if self.api_key:
+            if self.auth_type == "basic":
+                if ":" in self.api_key:
+                    user, pwd = self.api_key.split(":", 1)
+                    auth = HTTPBasicAuth(user, pwd)
+                else:
+                    headers["Authorization"] = f"Basic {self.api_key}"
+            else:
+                headers["Authorization"] = f"Bearer {self.api_key}"
+
+        log.info(f"🔍 Verifying connection to LLM endpoint: {tags_url}")
+        try:
+            response = requests.get(
+                tags_url,
+                headers=headers,
+                auth=auth,
+                timeout=min(self.default_params.get("timeout", 10), 10),
+                verify=self.verify_cert,
+            )
+            response.raise_for_status()
+
+            log.info(f"✅ Successfully connected to LLM endpoint: {root_url}")
+            # Parse and log available models at DEBUG level
+            data = response.json()
+            models = []
+
+            if "models" in data:  # Ollama native /api/tags format
+                models = [m.get("name") for m in data.get("models", [])]
+            elif "data" in data:  # OpenAI /v1/models format
+                models = [m.get("id") for m in data.get("data", [])]
+
+            if models:
+                log.debug(
+                    f"📋 Available models at endpoint ({len(models)}): {', '.join(models)}"
+                )
+            else:
+                log.debug(
+                    "📋 Connected successfully, but no models were returned or unrecognized format."
+                )
+        except requests.exceptions.RequestException as e:
+            log.error(
+                f"💥 Connection error or SSL validation failure to LLM endpoint [{tags_url}]: {e}"
+            )
+            raise ConnectionError(
+                f"Connection error/SSL validation failure to LLM endpoint at {tags_url}: {e}"
+            ) from e
+
+    def _initialize_litellm(self, cfg: dict, debug_override: bool = False):
         """Perform one-time SDK setup"""
         litellm.skip_model_info_query = cfg.get("skip_model_info_query", True)
         litellm.use_local_model_cost_map = cfg.get("use_local_model_cost_map", True)
         litellm.suppress_helper_warnings = cfg.get("suppress_helper_warnings", True)
+        litellm.suppress_debug_info = cfg.get("suppress_debug_info", True)
 
         turn_on_debug = debug_override or cfg.get("debug_llm", False)
 
         if turn_on_debug:
             log.debug("turning on litellm debug")
+            # noinspection protected-member
             litellm._turn_on_debug()
 
         # Set API base URL
@@ -238,9 +410,6 @@ class LLMClient:
         # Assign unified api_key to LiteLLM and environment
         log.debug(f"api_key={self.api_key}")
         litellm.api_key = self.api_key
-
-        # # Also ensure OpenAI SDK compatibility when provider is set to openai
-        # os.environ["OPENAI_API_KEY"] = self.api_key
 
         # Flexible local cost map supporting both GPU host endpoints
         model_cost_map_default = {
@@ -258,14 +427,21 @@ class LLMClient:
                 "input_cost_per_token": 0,
                 "output_cost_per_token": 0,
             },
-            "qwen3.5:27b": {
+            "qwen2.5-coder:7b": {
                 "max_tokens": 16384,
                 "cache_creation_input_token_cost": 0,
                 "cache_read_input_token_cost": 0,
                 "input_cost_per_token": 0,
                 "output_cost_per_token": 0,
             },
-            "qwen2.5-coder:7b": {
+            "qwen2.5-coder:32b": {
+                "max_tokens": 16384,
+                "cache_creation_input_token_cost": 0,
+                "cache_read_input_token_cost": 0,
+                "input_cost_per_token": 0,
+                "output_cost_per_token": 0,
+            },
+            "qwen3.5:27b": {
                 "max_tokens": 16384,
                 "cache_creation_input_token_cost": 0,
                 "cache_read_input_token_cost": 0,
@@ -298,27 +474,38 @@ class LLMClient:
 
         litellm.register_model(model_cost_map)
 
-    def get_response(self, prompt, **kwargs):
-        """Refactored class method for LLM calls"""
+    def get_response(self, prompt_or_messages, **kwargs):
+        """Refactored class method for LLM calls accepting strings or message lists"""
         params = {**self.default_params, **kwargs}
         extra_headers = kwargs.pop("extra_headers", {})
 
-        # Only inject the Basic auth header override if auth_type is explicitly set to "basic"
         if self.auth_type == "basic" and self.api_key:
-            extra_headers["Authorization"] = f"Basic {self.api_key}"
+            if ":" in self.api_key:
+                import base64
+
+                encoded_bytes = base64.b64encode(self.api_key.encode("utf-8"))
+                extra_headers["Authorization"] = (
+                    f"Basic {encoded_bytes.decode('utf-8')}"
+                )
+            else:
+                extra_headers["Authorization"] = f"Basic {self.api_key}"
+
+        # Support passing either raw messages list or a single prompt string
+        if isinstance(prompt_or_messages, list):
+            messages = prompt_or_messages
+        else:
+            messages = [{"role": "user", "content": prompt_or_messages}]
 
         try:
             response = litellm.completion(
                 model=self.model,
-                messages=[{"role": "user", "content": prompt}],
-                # clear bearer key injection if using explicit basic header
+                messages=messages,
                 api_key=self.api_key if self.auth_type != "basic" else None,
                 extra_headers=extra_headers if extra_headers else None,
                 **params,
             )
             return response.choices[0].message.content.strip()
         except Exception as e:
-            # Log it if you want, but re-raise so the caller knows it failed
             logging.error(f"LLM Error: {type(e).__name__}: {e}")
             raise
 
@@ -417,6 +604,15 @@ def should_ignore_path(path: Path, ignore_patterns: list) -> bool:
         if fnmatch.fnmatch(path_str, pattern) or pattern in path_str:
             return True
     return False
+
+
+def strip_code_fences(text: str) -> str:
+    """Eliminates unnecessary top-level markdown code fences from LLM responses."""
+    text = text.strip()
+    match = re.match(r"^```[a-zA-Z0-9_-]*\n([\s\S]*?)\n```$", text)
+    if match:
+        return match.group(1).strip()
+    return text
 
 
 def is_ignored(path, ignore_patterns, spec=None):

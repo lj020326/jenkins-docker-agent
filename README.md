@@ -27,6 +27,7 @@ An enterprise-grade collection of optimized, purpose-built Docker agent configur
 [![jenkins-dind-agent Pulls](https://img.shields.io/docker/pulls/lj020326/jenkins-dind-agent.svg?style=flat-square&label=jenkins-dind-agent)](https://hub.docker.com/repository/docker/lj020326/jenkins-dind-agent/)
 [![jenkins-swarm-agent Pulls](https://img.shields.io/docker/pulls/lj020326/jenkins-swarm-agent.svg?style=flat-square&label=jenkins-swarm-agent)](https://hub.docker.com/repository/docker/lj020326/jenkins-swarm-agent/)
 [![wiki-pipeline Pulls](https://img.shields.io/docker/pulls/lj020326/wiki-pipeline.svg?style=flat-square&label=wiki-pipeline)](https://hub.docker.com/repository/docker/lj020326/wiki-pipeline/)
+[![crewai-doc-agent Pulls](https://img.shields.io/docker/pulls/lj020326/crewai-doc-agent.svg?style=flat-square&label=crewai-doc-agent)](https://hub.docker.com/repository/docker/lj020326/crewai-doc-agent/)
 
 ---
 
@@ -50,6 +51,7 @@ graph TD
     AgentDinD[jenkins-dind-agent<br><i>Docker-in-Docker Engine</i>]
     AgentSwarm[jenkins-swarm-agent<br><i>Swarm Plugin Standalone</i>]
     AgentDoc[wiki-pipeline<br><i>Documentation Automation</i>]
+    AgentCrewAI[crewai-doc-agent<br><i>CrewAI Documentation Automation</i>]
     AgentCLI[jenkins-docker-agent<br><i>Inbound Build CLI</i>]
 
     %% Define Dependencies
@@ -57,6 +59,7 @@ graph TD
     Base --> AgentDinD
     Base --> AgentSwarm
     Base --> AgentDoc
+    Base --> AgentCrewAI
     Base --> AgentCLI
 
     %% Styling
@@ -65,6 +68,7 @@ graph TD
     style AgentDinD fill:#2e75b6,stroke:#1f4e79,stroke-width:1px,color:#fff
     style AgentSwarm fill:#2e75b6,stroke:#1f4e79,stroke-width:1px,color:#fff
     style AgentDoc fill:#2e75b6,stroke:#1f4e79,stroke-width:1px,color:#fff
+    style AgentCrewAI fill:#2e75b6,stroke:#1f4e79,stroke-width:1px,color:#fff
     style AgentCLI fill:#2e75b6,stroke:#1f4e79,stroke-width:1px,color:#fff
 ```
 
@@ -104,6 +108,12 @@ graph TD
 * **Documentation:** [image/wiki-pipeline/README.md](image/wiki-pipeline/README.md)
 * **Role:** A specialized, utility-driven downstream container tasked with harvesting, normalizing, compiling, and syncing automated Markdown documentation blocks directly to internal enterprise tracking wikis and static documentation dashboards.
 
+#### 🔹 `crewai-doc-agent`
+* **Source Context:** `image/crewai-doc-agent/`
+* **Dockerfile:** `image/crewai-doc-agent/Dockerfile`
+* **Documentation:** [image/crewai-doc-agent/README.md](image/crewai-doc-agent/README.md)
+* **Role:** An automated, AI-driven documentation and repository analysis agent leveraging CrewAI and LiteLLM to package source code context, perform pre-flight LLM health checks with corporate proxy/authentication support, and generate technical documentation.
+
 #### 🔹 `jenkins-docker-agent`
 * **Source Context:** `image/jenkins-docker-agent/`
 * **Dockerfile:** `image/jenkins-docker-agent/Dockerfile`
@@ -116,13 +126,13 @@ graph TD
 
 The matrix utilizes parameterized configurations to adapt to architectural upgrades smoothly without forcing manual inline updates to downstream layers:
 
-| Argument Parameter | Default | Intended Target Purpose |
-| :--- | :--- | :--- |
-| `JAVA_VERSION` | `21` | Configures the underlying enterprise Java execution layer. |
-| `PYTHON_VERSION` | `3.13` | Declares the default system interpreter branch version. |
-| `DEBIAN_VERSION` | `bookworm` | Pinpoints the core target distribution layer variant (`bookworm`, `bullseye`). |
-| `ANSIBLE_CORE_VERSION`| `latest` | Locks the targeted configuration framework foundation version. |
-| `DOCKER_GID` | `1102` | Matches internal container mounts to host engine sockets to avoid permission errors. |
+| Argument Parameter     | Default    | Intended Target Purpose                                                              |
+|:-----------------------|:-----------|:-------------------------------------------------------------------------------------|
+| `JAVA_VERSION`         | `21`       | Configures the underlying enterprise Java execution layer.                           |
+| `PYTHON_VERSION`       | `3.13`     | Declares the default system interpreter branch version.                              |
+| `DEBIAN_VERSION`       | `bookworm` | Pinpoints the core target distribution layer variant (`bookworm`, `bullseye`).       |
+| `ANSIBLE_CORE_VERSION` | `latest`   | Locks the targeted configuration framework foundation version.                       |
+| `DOCKER_GID`           | `1102`     | Matches internal container mounts to host engine sockets to avoid permission errors. |
 
 ---
 
@@ -136,6 +146,9 @@ docker build -t cicd-build-tools:latest -f image/cicd-build-tools/Dockerfile ima
 
 # Compilation Example: Downstream Documentation Pipeline Agent
 docker build -t wiki-pipeline:latest -f image/wiki-pipeline/Dockerfile image/wiki-pipeline
+
+# Compilation Example: Downstream CrewAI Documentation Agent
+docker build -t crewai-doc-agent:latest -f image/crewai-doc-agent/Dockerfile image/crewai-doc-agent
 ```
 
 ---

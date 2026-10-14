@@ -47,71 +47,54 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 
-# Translations
-*.mo
-*.pot
+# ---------------------------------------------------------------------------
+# CrewAI / LanceDB agent state (ephemeral CI + local runs)
+# ---------------------------------------------------------------------------
+.agent_state/
+.crewai/
+**/crewai/memory/
+**/.lancedb/
+**/*.lance
+**/memories.lance/
 
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
+# Legacy / alternate CrewAI storage layouts
+chroma.sqlite3
+chromadb-*.lock
+**/short_term_memory/
+**/long_term_memory/
+**/entities/
+**/long_term_memory_storage.db
 
-# Flask stuff:
-instance/
-.webassets-cache
+# Packaged LLM context (regenerated each run; large)
+.package_dir.context.yml
+.package_dir.*.yml
+**/index_package.tar.gz
 
-# Scrapy stuff:
-.scrapy
-
-# Sphinx documentation
-docs/_build/
-
-# PyBuilder
-target/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# pyenv
-.python-version
-
-# celery beat schedule file
-celerybeat-schedule
-
-# SageMath parsed files
-*.sage.py
-
-# Environments
-.env
-.venv
-env/
+.code_index/
+.rsync/
+.idea/
+.vscode/
 venv/
-ENV/
-env.bak/
-venv.bak/
-
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
-
-# IntelliJ project files
-.idea
-*.iml
-out
-gen
-
-*.log
 save/
-
 .DS_Store
+*~
+*.retry
+*.log
+.vault_pass
 
+# ---------------------------------------------------------------------------
+# avoid push to public
+# ---------------------------------------------------------------------------
 archive/
+.wiki/
+raw/
+id_rsa
+private/
+files/private/
+vars/vault.yml
+vars/secrets.yml
+vault.yml
+vaulted-credentials.yml
+*.vault.yml
+secrets.yml
+*.secrets.yml

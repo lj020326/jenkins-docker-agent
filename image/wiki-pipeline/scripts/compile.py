@@ -5,22 +5,34 @@ Uses LLM to polish and standardize files in the raw storage into the wiki.
 """
 
 import argparse
+import litellm
 import logging
+import re
 from pathlib import Path
 
 from .utils import (
+    LLMClient,
     ensure_dir,
     get_content_fingerprint,
     get_effective_paths,
     load_config,
     load_state,
+    render_yaml_prompt,
     save_state,
     setup_logging,
-    LLMClient,
 )
 
 # Create a module-level logger
 log = logging.getLogger(__name__)
+
+
+def strip_code_fences(text: str) -> str:
+    """Eliminates unnecessary top-level markdown code fences from LLM responses."""
+    text = text.strip()
+    match = re.match(r"^```[a-zA-Z0-9_-]*\n([\s\S]*?)\n```$", text)
+    if match:
+        return match.group(1).strip()
+    return text
 
 
 def compile_raw_to_wiki(
@@ -43,9 +55,10 @@ def compile_raw_to_wiki(
     if "compile" not in state:
         state["compile"] = {}
 
-    log.info("Compiling markdown...")
+    log.info("Compiling legacy harvested markdown...")
     ensure_dir(effective_wiki_dir)
     processed = 0
+    # Only process legacy harvested docs, avoiding re-running LLM on role outputs.
     for md_file in sorted(effective_raw_dir.rglob("*.md")):
         if limit and processed >= limit:
             log.debug(f"   ⏭️  Processed file limit hit => {processed}")
@@ -75,14 +88,11 @@ def compile_raw_to_wiki(
         if len(content) > max_file_size * 2:
             content = content[:max_file_size] + "\n... [truncated - large file] ..."
 
-        prompt = (
-            (compile_prompt.get("prefix", "") or "")
-            + f"\n\nOriginal content:\n{content}\n\n"
-            + (compile_prompt.get("suffix", "") or "")
-        )
+        messages = render_yaml_prompt(compile_prompt, content=content)
 
         try:
-            improved = llm_client.get_response(prompt)
+            improved = llm_client.get_response(messages)
+            improved = strip_code_fences(improved)
 
             target = effective_wiki_dir / md_file.relative_to(effective_raw_dir)
             ensure_dir(target.parent)
@@ -91,7 +101,12 @@ def compile_raw_to_wiki(
 
             state["compile"][file_id] = current_hash
             processed += 1
-
+        except litellm.InternalServerError as e:
+            log.error(f"   💥 Fatal LLM Internal Server Error for {md_file.name}: {e}")
+            raise
+        except (ConnectionError, TimeoutError) as e:
+            log.error(f"   💥 Fatal Connection/Timeout Error for {md_file.name}: {e}")
+            raise
         except Exception as e:
             log.error(f"   ⏭️  Skipping {md_file.name} due to error: {e}")
             # Optionally continue to the next file

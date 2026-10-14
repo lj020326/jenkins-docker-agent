@@ -1,27 +1,30 @@
 #!/usr/bin/env python3
-# scripts/ingest_yaml.py
+# scripts/ingest_ansible_yaml.py
 """
-Smart YAML ingestion for Ansible repositories.
-Creates one high-quality Markdown file per role.
-Supports --changed-only mode.
+Single-Pass Ansible Role Ingestion.
+Extracts role source code, integrates index insights, and generates production-ready wiki pages.
 """
 
 import argparse
+import litellm
 import logging
 import pathspec
 from pathlib import Path
 
 from .index import generate_wiki_index
 from .utils import (
+    IndexHelper,
+    LLMClient,
     ensure_dir,
     get_content_fingerprint,
     get_effective_paths,
     is_ignored,
     load_config,
     load_state,
+    render_yaml_prompt,
     save_state,
     setup_logging,
-    LLMClient,
+    strip_code_fences,
 )
 
 # Create a module-level logger
@@ -38,7 +41,11 @@ def get_role_name(yaml_path: Path) -> str:
 
 
 def summarize_role(
-    llm_client: LLMClient, role_dir: Path, repo_root: Path, config: dict
+    llm_client: LLMClient,
+    role_dir: Path,
+    repo_root: Path,
+    config: dict,
+    index_helper: IndexHelper,
 ) -> dict:
     role_name = get_role_name(role_dir)
     rel_role_path = role_dir.relative_to(repo_root)
@@ -49,7 +56,8 @@ def summarize_role(
     role_prompt = wiki_config.get("role_prompt", {})
 
     files_content = {}
-    max_file_size = 2500  # characters per file to avoid huge prompts
+    # characters per file to avoid huge prompts
+    max_file_size = 2500
 
     # for subdir in ["defaults", "vars", "tasks", "meta", "handlers", "templates", "files"]:
     for subdir in ["defaults", "tasks", "meta", "handlers"]:
@@ -63,7 +71,7 @@ def summarize_role(
                 # content = yml_file.read_text(encoding="utf-8")
                 lines = [
                     line
-                    for line in yml_file.read_text().splitlines()
+                    for line in yml_file.read_text(encoding="utf-8").splitlines()
                     if line.strip() and not line.strip().startswith("#")
                 ]
                 content = "\n".join(lines)
@@ -73,9 +81,9 @@ def summarize_role(
                     content = (
                         content[:max_file_size] + "\n... [truncated - large file] ..."
                     )
-                files_content[f"{subdir}/{yml_file.name}"] = content
-            except Exception:
-                pass
+                files_content[f"{subdir}/{yml_file.relative_to(sub_path)}"] = content
+            except Exception as e:
+                log.debug(f"Could not read {yml_file}: {e}")
 
     files_section = "\n\n".join(
         [
@@ -84,18 +92,50 @@ def summarize_role(
         ]
     )
 
-    prompt = (
-        (role_prompt.get("prefix", "") or "")
-        + f"\nRole Path: {rel_role_path}\n\n{files_section}\n\n"
-        + (role_prompt.get("suffix", "") or "")
+    # Check for and read an existing role README.md file
+    readme_path = role_dir / "README.md"
+    readme_section = ""
+    if readme_path.exists():
+        try:
+            readme_content = readme_path.read_text(encoding="utf-8")
+            if len(readme_content) > max_file_size * 2:
+                readme_content = (
+                    readme_content[: max_file_size * 2]
+                    + "\n... [truncated - large README] ..."
+                )
+            readme_section = (
+                f"\n\n### Existing README.md\n````markdown\n{readme_content}\n````"
+            )
+        except Exception as e:
+            log.debug(f"Could not read README.md for {role_name}: {e}")
+
+    # Use Indexer to find actual usages across repository
+    usages = index_helper.find_role_dependents(role_name)
+    usage_section = ""
+    if usages:
+        usage_section = (
+            "\n\n### Discovered Repos/Playbooks Using This Role:\n"
+            + "\n".join([f"- `{u}`" for u in usages[:10]])
+        )
+
+    messages = render_yaml_prompt(
+        role_prompt,
+        rel_role_path=rel_role_path,
+        role_name=role_name,
+        files_section=files_section,
+        readme_section=readme_section,
+        usage_section=usage_section,
     )
 
     log.info(
-        f"   ⏭️  Generating documentation for role: {role_name} ({len(files_content)} files)"
+        f"   Generating documentation for role: {role_name} ({len(files_content)} files)"
     )
 
     try:
-        md_content = llm_client.get_response(prompt)
+        md_content = llm_client.get_response(messages)
+
+        # Strip outer markdown code fences if the LLM wrapped the response
+        md_content = strip_code_fences(md_content)
 
         # Ensure frontmatter exists
         if not md_content.strip().startswith("---"):
@@ -111,7 +151,6 @@ tags: [ansible, role, {role_name}]
             md_content = frontmatter + md_content
 
         target_path = f"{wiki_dir}/roles/{role_name}.md"
-
         return {
             "content": md_content,
             "target_path": target_path,
@@ -119,8 +158,7 @@ tags: [ansible, role, {role_name}]
         }
 
     except Exception as e:
-        # Log it if you want, but re-raise so the caller knows it failed
-        logging.error(f"LLM Error: {type(e).__name__}: {e}")
+        log.error(f"LLM Error: {type(e).__name__}: {e}")
         raise
 
 
@@ -142,6 +180,8 @@ def ingest_ansible_yaml(
     # 2. Safety: Ensure role output dir exists before processing
     role_output_dir = repo_root / effective_wiki_dir / "roles"
     ensure_dir(role_output_dir)
+
+    index_helper = IndexHelper(repo_root)
 
     state = load_state(state_path)
     if "ingest" not in state:
@@ -190,7 +230,9 @@ def ingest_ansible_yaml(
 
         try:
             # 5. Summarization logic
-            result = summarize_role(llm_client, role_path, repo_root, config)
+            result = summarize_role(
+                llm_client, role_path, repo_root, config, index_helper
+            )
 
             # 6. Polished File Writing: Use the established paths
             target_md = role_output_dir / f"{result['role_name']}.md"
@@ -201,7 +243,12 @@ def ingest_ansible_yaml(
 
             log.debug(f"   ✓ Generated {target_md.relative_to(repo_root)}")
             processed += 1
-
+        except litellm.InternalServerError as e:
+            log.error(f"   💥 Fatal LLM Internal Server Error for {role_id}: {e}")
+            raise
+        except (ConnectionError, TimeoutError) as e:
+            log.error(f"   💥 Fatal Connection/Timeout Error for {role_id}: {e}")
+            raise
         except Exception as e:
             log.error(f"   ❌ Failed to process {role_id}: {e}")
             continue
@@ -230,9 +277,6 @@ if __name__ == "__main__":
     llm_client = LLMClient(
         config_path=args.config,
         overrides={
-            "model": args.model,
-            "api_base": args.api_base,
-            "provider": args.provider,
             "debug_llm": args.debug_llm,
         },
     )
